@@ -17,6 +17,9 @@ export type Analysis = {
   availability: { pulls: boolean; commits: boolean; issues: boolean; community: boolean };
   warnings: string[]; requests: number; rateRemaining: number | null;
 };
+let transport: typeof fetch = (...args) => fetch(...args);
+export function setTransport(next: typeof fetch) { transport = next; }
+export function clearMemory() { memory.clear(); jobs.clear(); }
 const BASE = 'https://api.github.com';
 const TTL = 15 * 60000;
 const MAX_STALE = 7 * 86400000;
@@ -38,12 +41,12 @@ export class GitHubClient {
     let response: Response;
     try {
       const timeout = AbortSignal.timeout(18000);
-      response = await fetch(BASE + path, {
+      response = await transport(BASE + path, {
         headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
         credentials: 'omit', referrerPolicy: 'no-referrer', signal: signal ? AbortSignal.any([signal, timeout]) : timeout
       });
     } catch (error) {
-      if (signal?.aborted) throw error;
+      if (signal?.aborted || (error instanceof Error && /token|cooling down|Connection changed/.test(error.message))) throw error;
       throw new GitHubError(error instanceof Error && error.name === 'TimeoutError' ? 'GitHub took too long to reply. Try again shortly.' : 'Unable to reach GitHub. Check your connection.', 0);
     }
     this.requests++;
