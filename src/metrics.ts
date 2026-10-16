@@ -76,3 +76,6 @@ export function opportunities(issues: Issue[]) {
 export function compareActivity(a: ReturnType<typeof activity>, b: ReturnType<typeof activity>): number {
   return b.merged - a.merged || b.authors - a.authors || b.commits - a.commits;
 }
+
+export function hasNextIssuePage(rawCount:number,total:number,page:number){return page<10&&rawCount===30&&page*30<total;}
+export function needsLinkCheck(check:{state:string}|undefined){return !check||check.state==='incomplete';}

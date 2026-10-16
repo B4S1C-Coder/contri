@@ -1,3 +1,4 @@
+import {normalizeSaved,type Saved} from './brief';
 import { connect, connection, disconnect, initializeAuth } from './auth';
 import { authenticatedFetch, capacity, resetTransport } from './transport';
 import { clearMemory, rankSearch, setTransport } from './github';
@@ -11,11 +12,14 @@ let epoch=0;
 async function invalidate() {
   epoch++; for(const job of jobs.values())job.controller.abort(); jobs.clear();clearMemory();resetTransport();
   const all=await chrome.storage.local.get(null);
-  await chrome.storage.local.remove(Object.keys(all).filter(k=>k.startsWith('v3:')||k.startsWith('analysis:')));
+  await chrome.storage.local.remove(Object.keys(all).filter(k=>k.startsWith('v4:')||k.startsWith('v3:')||k.startsWith('analysis:')));
 }
 async function perform(message:Message,signal:AbortSignal) {
   const p=message.input as Record<string,any>;
   switch(message.op){
+    case 'saved':return (await chrome.storage.local.get('shortlist')).shortlist||[];
+    case 'save':{const item=normalizeSaved(p.item);await publicRepo(item.repo,signal);const old:Saved[]=(await chrome.storage.local.get('shortlist')).shortlist||[];if(old.length>=50&&!old.some(i=>i.url===item.url))throw new Error('Shortlist is full. Remove an item first.');const items=[item,...old.filter(i=>i.url!==item.url)];await chrome.storage.local.set({shortlist:items});return items;}
+    case 'removeSaved':{const old:Saved[]=(await chrome.storage.local.get('shortlist')).shortlist||[];const items=old.filter(i=>i.url!==p.url);await chrome.storage.local.set({shortlist:items});return items;}
     case 'repo':return publicRepo(p.repo,signal);
     case 'activity':return overviewActivity(p.repo,signal);
     case 'team':return teamEvidence(p.repo,signal);
@@ -36,17 +40,17 @@ chrome.runtime.onConnect.addListener(port=>{
   const senderURL=port.sender?.url||'';
   const trusted=senderURL===chrome.runtime.getURL('settings.html');
   if(!trusted&&!/^https:\/\/github\.com\//.test(senderURL)){port.disconnect();return;}
-  let key:string|undefined;let handled=false;
-  port.onDisconnect.addListener(()=>{if(key){const job=jobs.get(key);job?.users.delete(port);if(job&&!job.users.size){job.controller.abort();jobs.delete(key);}}});
+  let key:string|undefined;let handled=false;let disconnected=false;
+  port.onDisconnect.addListener(()=>{disconnected=true;if(key){const job=jobs.get(key);job?.users.delete(port);if(job&&!job.users.size){job.controller.abort();jobs.delete(key);}}});
   port.onMessage.addListener(async raw=>{
     if(handled)return;handled=true;
     try{
-      await initializeAuth();
+      await initializeAuth();if(disconnected)return;
       const message=validateMessage(raw,trusted);
       const cacheable=['repo','activity','team','documents','issues','links','search'].includes(message.op);
       if(!cacheable){port.postMessage({ok:true,value:await perform(message,new AbortController().signal)});return;}
-      key=`v3:${JSON.stringify(message)}`;
-      const cache=(await chrome.storage.local.get(key))[key];
+      key=`v4:${JSON.stringify(message)}`;
+      const cache=(await chrome.storage.local.get(key))[key];if(disconnected)return;
       if(cache&&Date.now()-cache.at<15*60000){port.postMessage({ok:true,value:cache.value});return;}
       let job=jobs.get(key);
       if(!job){
@@ -57,7 +61,7 @@ chrome.runtime.onConnect.addListener(port=>{
           const record=value as {warnings?:string[];state?:string;note?:string};
           if(!record.warnings?.length&&record.state!=='incomplete'&&!record.note){
             await chrome.storage.local.set({[cacheKey]:{at:Date.now(),value}});
-            const all=await chrome.storage.local.get(null);const keys=Object.keys(all).filter(k=>k.startsWith('v3:')).sort((a,b)=>all[b].at-all[a].at);if(keys.length>100)await chrome.storage.local.remove(keys.slice(100));
+            const all=await chrome.storage.local.get(null);const keys=Object.keys(all).filter(k=>k.startsWith('v4:')).sort((a,b)=>all[b].at-all[a].at);if(keys.length>100)await chrome.storage.local.remove(keys.slice(100));
           }
           return value;
         });

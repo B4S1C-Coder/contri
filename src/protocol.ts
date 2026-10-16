@@ -1,7 +1,11 @@
 import type { ActivityReport, TeamReport, Repo, LinkCheck, IssueQuery, documents, searchIssues } from './evidence';
 import type { Connection } from './auth';
 import type { rankSearch } from './github';
+import type {Saved} from './brief';
 export type Operations = {
+  saved: {input:Record<string,never>;output:Saved[]};
+  save: {input:{item:Saved};output:Saved[]};
+  removeSaved: {input:{url:string};output:Saved[]};
   repo: { input: {repo:string}; output: Repo };
   activity: { input: {repo:string}; output: ActivityReport };
   team: { input: {repo:string}; output: TeamReport };

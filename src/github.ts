@@ -164,7 +164,7 @@ export function analyze(name: string, signal?: AbortSignal): Promise<{ data: Ana
 }
 export async function rankSearch(query: string, signal?: AbortSignal) {
   const client = new GitHubClient();
-  const q = `${query.trim()} in:name,description archived:false fork:false`;
+  const q = `${query.trim()} in:name,description archived:false fork:false is:public`;
   const found = await client.get<{ total_count: number; incomplete_results: boolean; items: Repository[] }>(`/search/repositories?q=${encodeURIComponent(q)}&sort=updated&per_page=5`, signal);
   const since = new Date(Date.now() - 90 * 86400000).toISOString();
   const rows: Array<{ repo: Repository; metrics: ReturnType<typeof activity> | null; limited: boolean; error?: string }> = [];

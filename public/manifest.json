@@ -1,23 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Contributor Compass",
-  "version": "0.1.0",
+  "name": "CONTRI \u2014 Open Source Compass",
+  "version": "0.2.0",
   "description": "Explore public GitHub repositories with clear evidence about activity and contribution opportunities.",
-  "minimum_chrome_version": "114",
+  "minimum_chrome_version": "124",
   "action": {
-    "default_title": "Open Contributor Compass"
+    "default_title": "Open CONTRI"
   },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-  "side_panel": {
-    "default_path": "index.html"
-  },
   "permissions": [
-    "sidePanel",
-    "activeTab",
-    "storage"
+    "storage",
+    "scripting",
+    "activeTab"
   ],
   "host_permissions": [
     "https://api.github.com/*",
@@ -28,5 +25,17 @@
     "32": "icon-32.png",
     "48": "icon-48.png",
     "128": "icon-128.png"
-  }
+  },
+  "options_page": "settings.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "widget.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

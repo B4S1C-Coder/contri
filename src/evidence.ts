@@ -1,12 +1,13 @@
+export {hasNextIssuePage,needsLinkCheck} from './metrics';
 import { GitHubClient, GitHubError, type Repository } from './github';
-import { activity, firstTeamReply, isBot, isTeam, parseRepo, type Pull, type Issue, type Reply } from './metrics';
+import { activity, firstTeamReply, isBot, isTeam, parseRepo, hasNextIssuePage, type Pull, type Issue, type Reply } from './metrics';
 export type Repo = Repository & { language: string | null; forks_count: number; default_branch: string; };
 export type Item = Pull & Issue & { state: string; assignees?: Array<{ login: string }>; repository_url: string };
 export type Event = { at: string; url: string; kind: string; login: string; association?: string };
 export type Sample = { number: number; title: string; url: string; createdAt: string; hours: number | null; response?: Event; partial: boolean };
 export type Member = { login: string; association: string; responses: number; reviews: number; latest: Event };
 export type LinkedPR = { number: number; title: string; html_url: string; state: string; draft: boolean; merged_at: string | null };
-export type LinkCheck = { state: 'open' | 'clear' | 'incomplete'; prs: LinkedPR[]; checkedAt: string; note: string };
+export type LinkCheck = { state: 'open' | 'clear' | 'incomplete'; prs: LinkedPR[]; checkedAt: string; note: string; discussion?: ReturnType<typeof discussionSummary> };
 export function timing(values: Array<number | null>) {
   const answered = values.filter((x): x is number => x !== null && Number.isFinite(x)).sort((a,b) => a-b);
   const n = answered.length;
@@ -29,7 +30,7 @@ export async function overviewActivity(repo: string, signal?: AbortSignal) {
   await publicRepo(repo,signal); const client = new GitHubClient(); const base=path(repo);
   const warnings: string[]=[];
   async function optional<T>(name: string, endpoint: string): Promise<T|null> {
-    try { return await client.get<T>(endpoint,signal); } catch(e) { if(signal?.aborted) throw e; warnings.push(`${name}: ${e instanceof Error ? e.message : 'Unavailable'}`); return null; }
+    try { return await client.get<T>(endpoint,signal); } catch(e) { if(signal?.aborted) throw e; if(!(name==='Latest release'&&e instanceof GitHubError&&e.status===404))warnings.push(`${name}: ${e instanceof Error ? e.message : 'Unavailable'}`); return null; }
   }
   type Commit = { author: {login:string;type?:string}|null; html_url:string; commit:{author:{date:string}} };
   const pulls=await optional<Pull[]>('PR activity',`${base}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
@@ -83,11 +84,12 @@ export async function teamEvidence(repo:string,signal?:AbortSignal) {
       }catch(e){if(signal?.aborted)throw e;warnings.push(`${kind} #${item.number}: history unavailable and excluded. ${e instanceof Error?e.message:''}`);if(client.remaining!==null&&client.remaining<=3)break;}
     }
   }
+  const latestTeam=humanEvents.filter(e=>isTeam(e.association)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0]||null;
   const people=[...members.values()].sort((a,b)=>Date.parse(b.latest.at)-Date.parse(a.latest.at));
-  return { groups,summary:{pr:timing(groups.pr.filter(s=>!s.partial).map(s=>s.hours)),issue:timing(groups.issue.filter(s=>!s.partial).map(s=>s.hours))},members:people,latestTeam:people[0]?.latest||null,latestHuman:humanEvents.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0]||null,warnings,checkedAt:nowISO() };
+  return { groups,summary:{pr:timing(groups.pr.filter(s=>!s.partial).map(s=>s.hours)),issue:timing(groups.issue.filter(s=>!s.partial).map(s=>s.hours))},members:people,latestTeam,latestHuman:humanEvents.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0]||null,warnings,checkedAt:nowISO() };
 }
 export type TeamReport=Awaited<ReturnType<typeof teamEvidence>>;
-export async function documents(repo:string,signal?:AbortSignal) {
+export async function documents(repo:string,signal?:AbortSignal):Promise<{files:Record<string,{html_url:string}|null>;note?:string}> {
   const metadata=await publicRepo(repo,signal);
   try{return await new GitHubClient().get<{files:Record<string,{html_url:string}|null>}>(`${path(repo)}/community/profile`,signal);}
   catch(e){if(signal?.aborted)throw e;return {files:{},note:metadata.fork?'Community profile unavailable for this fork. Check upstream documentation.':e instanceof Error?e.message:'Documentation unavailable'};}
@@ -100,7 +102,7 @@ export async function searchIssues(input:IssueQuery,signal?:AbortSignal) {
   const words=input.query.replace(/[^\p{L}\p{N} _-]/gu,' ').trim().slice(0,100);
   const q=`repo:${input.repo} is:issue is:open ${label} ${input.unassigned?'no:assignee':''} ${words}`;
   const result=await new GitHubClient().get<{items:Item[];total_count:number;incomplete_results:boolean}>(`/search/issues?q=${encodeURIComponent(q)}&sort=${input.sort}&order=desc&per_page=30&page=${input.page}`,signal);
-  return {...result,items:result.items.filter(i=>!i.pull_request&&!i.locked)};
+  return {...result,hasNext:hasNextIssuePage(result.items.length,result.total_count,input.page),items:result.items.filter(i=>!i.pull_request&&!i.locked)};
 }
 export async function checkIssue(repo:string,number:number,signal?:AbortSignal):Promise<LinkCheck> {
   await publicRepo(repo,signal); const client=new GitHubClient(); const prs:LinkedPR[]=[];let complete=true;
@@ -114,5 +116,13 @@ export async function checkIssue(repo:string,number:number,signal?:AbortSignal):
       try{await publicRepo(match[1],signal);prs.push(await client.get<LinkedPR>(`/repos/${match[1]}/pulls/${match[2]}`,signal));}catch(e){if(signal?.aborted)throw e;complete=false;}
     }
   }catch(e){if(signal?.aborted)throw e;complete=false;}
-  return {state:linkState(prs,complete),prs,checkedAt:nowISO(),note:complete?'Public timeline references checked. References may be unrelated; unlinked work can exist.':'Timeline or referenced PRs could not be checked completely.'};
+  let discussion:ReturnType<typeof discussionSummary>|undefined;
+  try{const comments=await history<Reply & {html_url:string}>(client,`${path(repo)}/issues/${number}/comments`,signal);discussion=discussionSummary(comments.values,comments.complete);}catch(e){if(signal?.aborted)throw e;discussion=discussionSummary([],false);}
+  return {state:linkState(prs,complete),prs,discussion,checkedAt:nowISO(),note:complete?'Public timeline references checked. References may be unrelated; unlinked work can exist.':'Timeline or referenced PRs could not be checked completely.'};
+}
+
+export function discussionSummary(rows:Array<Reply & {html_url:string}>,complete:boolean){
+ const human=rows.filter(r=>!isBot(r.user)&&r.created_at&&Date.parse(r.created_at)<=Date.now()).sort((a,b)=>Date.parse(b.created_at!)-Date.parse(a.created_at!));
+ const last=human[0];
+ return {complete,inspected:rows.length,teamComments:human.filter(r=>isTeam(r.author_association)).length,latest:last?{at:last.created_at!,url:last.html_url,login:last.user!.login,kind:'issue comment'}:null};
 }

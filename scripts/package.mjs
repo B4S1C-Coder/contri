@@ -12,7 +12,7 @@ async function visit(dir) {
 }
 await visit('dist');
 const { version } = JSON.parse(await readFile('package.json', 'utf8'));
-const name = `contributor-compass-v${version}.zip`;
+const name = `contri-v${version}.zip`;
 const bytes = zipSync(entries);
 await writeFile(name, bytes);
 await writeFile(`${name}.sha256`, `${createHash('sha256').update(bytes).digest('hex')}  ${name}\n`);
