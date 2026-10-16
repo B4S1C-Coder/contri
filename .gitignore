@@ -7,3 +7,5 @@ coverage/
 !.env.example
 
 *.zip.sha256
+!website/dist/
+!website/dist/**
