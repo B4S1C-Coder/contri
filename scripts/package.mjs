@@ -11,6 +11,11 @@ async function visit(dir) {
   }
 }
 await visit('dist');
+// Preview-only entries are not needed in the installable package.
+delete entries['index.html'];delete entries['preview.js'];
+for (const file of await readdir('licenses')) entries[`licenses/${file}`]=new Uint8Array(await readFile(join('licenses',file)));
+entries['LICENSE']=new Uint8Array(await readFile('LICENSE'));
+entries['PRIVACY.md']=new Uint8Array(await readFile('PRIVACY.md'));
 const { version } = JSON.parse(await readFile('package.json', 'utf8'));
 const name = `contri-v${version}.zip`;
 const bytes = zipSync(entries);

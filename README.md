@@ -1,10 +1,12 @@
-# Contributor Compass
+# CONTRI
 
-A free Chrome side panel for finding useful work in public GitHub repositories. A sea-glass widget with an original atmospheric background, readable evidence, and a subtle interactive grid.
+A free, open-source glass widget for contributors on GitHub. Understand repository activity, inspect observed team responses, and find useful issues before investing your time.
 
-## Run locally
+**Development build:** the source and build are available; installed Chrome verification is pending. This is not a Chrome Web Store release.
 
-Use Node.js 24 and Chrome 114 or newer.
+## Build and install
+
+Use Node.js 24 and Chrome 124 or newer.
 
 ```sh
 npm ci
@@ -12,30 +14,44 @@ npm test
 npm run build
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist`. Click the extension toolbar icon while viewing a GitHub repository.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist`. Open or reload a public GitHub repository. When updating a development build, click Reload on the extension card and reload the GitHub tab.
 
-The panel follows the active GitHub repository, including navigation to issues and pull requests. **Pause** keeps the current report. Entering a repository or choosing a discovery result switches to manual exploration; **Follow tab** resumes detection. No browsing history is stored. Public API results may be cached for 15 minutes; following a tab does not bypass that cache.
+A 360 × 460 px widget follows the repository. Drag its handle or use arrow keys while the handle is focused. Minimize to a 44 px launcher. Close hides it for the tab; the extension toolbar icon restores it. Use Reset position if needed. The widget is constrained to the viewport and never takes over a side panel.
 
-For a browser-only UI preview, run `npm run dev`. Automatic tab detection requires the installed extension.
+## What it shows
 
-## Five features
+- **Overview:** repository context, last push, 90-day sampled human merges, distinct PR authors, linked human commits, open issue/PR counts, latest release, and source-linked activity.
+- **Team:** up to 20 recent outside-contributor PRs and 20 issues, separate response coverage, average and median first reply, unanswered waiting ages, and observed team responders. Load this deeper analysis when needed.
+- **Issues:** direct issue search, beginner and experienced presets, labels and assignment, and public timeline checks for referenced open/draft/closed/merged PRs.
+- **Explore:** compare up to five public repositories by sampled recent activity.
+- **Contribution guide:** detected README, license, contribution guide, conduct policy, and templates.
 
-- **Overview:** 90-day human merge activity, distinct PR authors, and commits with linked human GitHub accounts.
-- **Team response:** sampled public conversation replies, reviews, and inline comments from owner/member/collaborator accounts. Inspect source evidence.
-- **Discovery:** compare up to five recently updated search candidates by sampled human merges, authors, and linked commits.
-- **Issue opportunities:** recently updated open good-first-issue and help-wanted issues, including assignment and discussion information.
-- **Readiness:** links to detected project documentation. Read the project's own requirements before contributing.
+Numbers are evidence, not predictions. A cross-reference does not prove a PR implements an issue; no linked open PR found does not prove nobody has begun work. Public associations are not a complete maintainer roster. See [metric definitions](docs/METRICS.md).
 
-Counts are bounded samples, not exhaustive totals. No score promises acceptance or a welcoming community. See [metric definitions](docs/METRICS.md) and [privacy](PRIVACY.md).
+## Optional token
 
-## Glass interactions
+Choose **Connect GitHub** in the widget. Settings walks you through creating a fine-grained token with public repository access and no extra write permissions. A token increases request capacity, but GitHub still applies limits. Default storage lasts for the browser session; optional local remembering and Disconnect are provided. Never paste a token into the website, an issue, or a screenshot. See [privacy](PRIVACY.md).
 
-A local grid and luminous dot follow the pointer. Touch adds a soft ring. The decorative layer never intercepts clicks, selection, or scrolling. Effects are disabled for reduced motion and forced colors. The glass blends with the extension's original background; Chrome does not expose the underlying website through its side panel.
+## Development and checks
 
-## Package and contribute
+`npm run dev` previews layout only. The installed extension is needed for Chrome APIs and live data.
 
-`npm run package` builds a loadable ZIP and SHA-256 checksum. Publish the full source repository, with the ZIP attached to a versioned release. See [contribution instructions](CONTRIBUTING.md). Chrome Web Store publication is a separate reviewed submission; it has not been completed.
+`npm test` runs offline fixtures. `CONTRI_LIVE=1 npm test -- tests/live.test.ts` runs an optional public API smoke check and consumes anonymous GitHub request capacity.
 
-## Current verification
+`npm run package` produces the extension ZIP and checksum. Release publication is gated on installed Chrome checks. Current evidence and limitations are in [verification](docs/VERIFICATION.md).
 
-Automated metric and API error tests and production build pass. The glass UI has been inspected in a browser preview. Installed Chrome side-panel navigation and complete live-repository verification remain release gates; this source is a development build.
+The buildless launch website lives in `website/dist`. Preview it with `python3 -m http.server 4174 --directory website/dist`. Demo data is explicitly fictional and isolated from live extension views.
+
+## Contribute
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Full source is MIT licensed. Small improvements to accessibility, metrics, fixtures, and documentation are welcome. Original code patterns from the user-supplied maintainerPulse archive are documented in [the review](docs/maintainer-pulse-review.md).
+
+## Prepare your contribution
+
+Use **Prepare my contribution** on an issue to preview a source-linked brief and checklist. Copy it into your preferred AI chat for explanation, investigation planning, or a PR checklist. No data is sent automatically and no AI login is collected. Chat subscription limits still apply; direct API integration is not included.
+
+Save projects or issues to **My shortlist**, add local notes, and compare up to three projects. Saved items stay in your Chrome profile and can be removed individually.
+
+## Launch materials
+
+[Store submission guide](docs/STORE-SUBMISSION.md) · [Release checklist](docs/RELEASE-CHECKLIST.md) · [Privacy policy](PRIVACY.md) · [License](LICENSE)
