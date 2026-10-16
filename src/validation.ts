@@ -15,6 +15,7 @@ export function validateMessage(value:unknown, trusted:boolean):Message {
   if(op==='issues'&&(!['','beginner','good first issue','help wanted','documentation','bug'].includes(String(input.label))||!['updated','created'].includes(String(input.sort))||typeof input.query!=='string'||input.query.length>100||typeof input.unassigned!=='boolean'||!Number.isInteger(input.page)||(input.page as number)<1||(input.page as number)>10))throw new Error('Invalid issue filters');
   if(op==='position'&&['x','y'].some(k=>input[k]!==undefined&&(typeof input[k]!=='number'||!Number.isFinite(input[k])||Math.abs(input[k] as number)>100000)))throw new Error('Invalid position');
   if(op==='connect'&&(typeof input.token!=='string'||typeof input.remember!=='boolean'))throw new Error('Invalid connection request');
+  if(op==='save'&&input.updateNote!==undefined&&typeof input.updateNote!=='boolean')throw new Error('Invalid note update');
   if(op==='save') normalizeSaved(input.item as Parameters<typeof normalizeSaved>[0]);
   if(op==='removeSaved'&&(typeof input.url!=='string'||input.url.length>500))throw new Error('Invalid saved item');
   return {op,input} as Message;

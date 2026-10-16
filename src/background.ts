@@ -1,4 +1,4 @@
-import {normalizeSaved,type Saved} from './brief';
+import {createShortlistStore} from './shortlist';
 import { connect, connection, disconnect, initializeAuth } from './auth';
 import { authenticatedFetch, capacity, resetTransport } from './transport';
 import { clearMemory, rankSearch, setTransport } from './github';
@@ -9,6 +9,7 @@ setTransport(authenticatedFetch as typeof fetch);
 void initializeAuth();
 const jobs=new Map<string,{promise:Promise<unknown>;controller:AbortController;users:Set<chrome.runtime.Port>}>();
 let epoch=0;
+const shortlist=createShortlistStore(async()=>(await chrome.storage.local.get('shortlist')).shortlist||[],async rows=>{await chrome.storage.local.set({shortlist:rows});});
 async function invalidate() {
   epoch++; for(const job of jobs.values())job.controller.abort(); jobs.clear();clearMemory();resetTransport();
   const all=await chrome.storage.local.get(null);
@@ -18,8 +19,8 @@ async function perform(message:Message,signal:AbortSignal) {
   const p=message.input as Record<string,any>;
   switch(message.op){
     case 'saved':return (await chrome.storage.local.get('shortlist')).shortlist||[];
-    case 'save':{const item=normalizeSaved(p.item);await publicRepo(item.repo,signal);const old:Saved[]=(await chrome.storage.local.get('shortlist')).shortlist||[];if(old.length>=50&&!old.some(i=>i.url===item.url))throw new Error('Shortlist is full. Remove an item first.');const items=[item,...old.filter(i=>i.url!==item.url)];await chrome.storage.local.set({shortlist:items});return items;}
-    case 'removeSaved':{const old:Saved[]=(await chrome.storage.local.get('shortlist')).shortlist||[];const items=old.filter(i=>i.url!==p.url);await chrome.storage.local.set({shortlist:items});return items;}
+    case 'save':await publicRepo(p.item.repo,signal);return shortlist.save(p.item,p.updateNote===true);
+    case 'removeSaved':return shortlist.remove(p.url);
     case 'repo':return publicRepo(p.repo,signal);
     case 'activity':return overviewActivity(p.repo,signal);
     case 'team':return teamEvidence(p.repo,signal);
