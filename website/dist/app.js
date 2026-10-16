@@ -29,3 +29,16 @@ setInterval(()=>{if(!paused&&visible&&!document.hidden&&!card.matches(':hover')&
 motion.addEventListener('change',()=>{if(motion.matches){paused=true;updatePause();document.querySelectorAll('.reveal').forEach(n=>n.classList.add('in-view'));}});updatePause();
 card.addEventListener('pointermove',event=>{if(motion.matches||event.pointerType==='touch')return;const rect=card.getBoundingClientRect();card.style.setProperty('--light-x',`${event.clientX-rect.left}px`);card.style.setProperty('--light-y',`${event.clientY-rect.top}px`);});
 document.querySelectorAll('[data-view]').forEach(button=>{button.setAttribute('aria-pressed',String(button.classList.contains('active')));button.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));if(!motion.matches)content.animate([{opacity:0,transform:'translateY(7px)'},{opacity:1,transform:'translateY(0)'}],{duration:280,easing:'ease-out'});});});
+
+const hero=document.querySelector('.hero');
+const motionToggle=document.createElement('button');motionToggle.className='motion-toggle';motionToggle.type='button';hero.append(motionToggle);
+let motionPaused=motion.matches;
+function setMotionPause(value){motionPaused=value;document.body.classList.toggle('motion-paused',value);motionToggle.textContent=value?'Play ambient motion':'Pause ambient motion';motionToggle.setAttribute('aria-pressed',String(value));if(value){paused=true;updatePause();}}
+setMotionPause(motionPaused);
+motionToggle.addEventListener('click',()=>setMotionPause(!motionPaused));
+motion.addEventListener('change',()=>{if(motion.matches)setMotionPause(true);});
+let pointerFrame=0;
+hero.addEventListener('pointermove',event=>{if(motionPaused||motion.matches||event.pointerType==='touch'||pointerFrame)return;const x=event.clientX,y=event.clientY;pointerFrame=requestAnimationFrame(()=>{const r=hero.getBoundingClientRect();hero.style.setProperty('--water-x',`${(x-r.left)/r.width*100}%`);hero.style.setProperty('--water-y',`${(y-r.top)/r.height*100}%`);pointerFrame=0;});});
+hero.addEventListener('pointerdown',event=>{if(motionPaused||motion.matches||event.target.closest('a,button,input,select,textarea'))return;const r=hero.getBoundingClientRect(),ring=document.createElement('span');ring.className='water-ripple';ring.setAttribute('aria-hidden','true');ring.style.left=`${event.clientX-r.left}px`;ring.style.top=`${event.clientY-r.top}px`;hero.append(ring);ring.addEventListener('animationend',()=>ring.remove(),{once:true});setTimeout(()=>ring.remove(),1500);});
+const ambientObserver=new IntersectionObserver(entries=>{hero.classList.toggle('ambient-offscreen',!entries[0].isIntersecting);});ambientObserver.observe(hero);
+document.addEventListener('visibilitychange',()=>hero.classList.toggle('ambient-hidden',document.hidden));

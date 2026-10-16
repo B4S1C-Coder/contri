@@ -19,3 +19,9 @@ A checklist and source review cannot guarantee Google approval. Store screenshot
 ## Provenance
 
 Wafer's homepage informed atmosphere and interaction patterns. CONTRI uses original copy and generated atmosphere, not Wafer assets, testimonials or logos. Website demo numbers are explicitly fictional and never used in live extension reports.
+
+## Final delivery checks
+
+- Packaged archive verification passes: 23 files, manifest at root, expected MV3 permissions, no preview entrypoints or dynamic code, and duplicate-host bundle startup.
+- GitHub Actions passed for bd83d615af6a34cf15de3e967a18571fbdb39462: https://github.com/alphasafal/contri/actions/runs/38902033611.
+- Additional homepage polish: slow tide movement, buoyant dots/rings, drifting mist, pointer light and touch ripples. Ambient pause/play verified in local browser; reduced-motion CSS disables decorative animations. Versioned asset URLs avoid stale browser assets.
