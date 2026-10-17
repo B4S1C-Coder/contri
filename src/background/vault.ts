@@ -37,30 +37,56 @@ async function database(): Promise<IDBDatabase> {
   return request(open);
 }
 
+async function readKey(db: IDBDatabase) {
+  return (await request(db.transaction(STORE).objectStore(STORE).get(KEY_ID))) as CryptoKey | undefined;
+}
+
+/** Storage problems (IndexedDB unavailable or corrupt) are thrown, never mistaken for a missing key. */
 async function key(create: boolean): Promise<CryptoKey | undefined> {
   const db = await database();
   try {
-    const existing = (await request(db.transaction(STORE).objectStore(STORE).get(KEY_ID))) as CryptoKey | undefined;
+    const existing = await readKey(db);
     if (existing || !create) return existing;
     const fresh = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-    await request(db.transaction(STORE, 'readwrite').objectStore(STORE).put(fresh, KEY_ID));
-    return fresh;
+    try {
+      // add() fails if another caller stored a key first; then everyone uses that one.
+      await request(db.transaction(STORE, 'readwrite').objectStore(STORE).add(fresh, KEY_ID));
+      return fresh;
+    } catch (error) {
+      if ((error as DOMException)?.name !== 'ConstraintError') throw error;
+      return readKey(db);
+    }
   } finally {
     db.close();
   }
 }
 
+let creating: Promise<CryptoKey | undefined> | undefined;
+/** One key per profile, even when two sign-ins are sealed at the same moment. */
+function encryptionKey() {
+  creating ??= key(true).finally(() => (creating = undefined));
+  return creating;
+}
+
 export async function seal(text: string): Promise<Sealed> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, (await key(true))!, new TextEncoder().encode(text));
+  const data = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    (await encryptionKey())!,
+    new TextEncoder().encode(text),
+  );
   return { v: 1, iv: toBase64(iv), data: toBase64(new Uint8Array(data)) };
 }
 
-/** Returns undefined when the key is gone or the data was altered, so the caller can sign out cleanly. */
+/**
+ * Returns undefined when the key is gone or the data was altered, so the caller can sign
+ * out cleanly. Throws when IndexedDB itself fails, so a temporary problem never deletes
+ * the user's sign-in.
+ */
 export async function unseal(sealed: Sealed): Promise<string | undefined> {
+  const k = await key(false);
+  if (!k) return undefined;
   try {
-    const k = await key(false);
-    if (!k) return undefined;
     const plain = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: fromBase64(sealed.iv) },
       k,

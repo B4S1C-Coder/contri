@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installChrome, json } from './helpers';
 import { validateMessage } from '../../src/background/validation';
@@ -289,6 +290,105 @@ describe('sign-in', () => {
     });
     expect(bodies.join('&')).not.toMatch(/client_secret/);
     expect(bodies[0]).toContain('client_id=Iv1.test');
+  });
+});
+
+describe('sign-in resilience', () => {
+  beforeEach(() => {
+    installChrome();
+    vi.stubGlobal('indexedDB', new IDBFactory());
+  });
+  const brokenIndexedDB = () => {
+    const real = globalThis.indexedDB;
+    vi.stubGlobal('indexedDB', {
+      open: () => {
+        throw new DOMException('Internal error opening backing store', 'UnknownError');
+      },
+    });
+    return () => vi.stubGlobal('indexedDB', real);
+  };
+  const plainRemembered = async () => {
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    await chrome.storage.local.set({
+      githubCredential: 'tok',
+      githubCredentialMeta: { login: 'safal', method: 'token' },
+    });
+    return chrome;
+  };
+
+  it('keeps a 0.3.0 sign-in working when encryption fails, and seals it once storage recovers', async () => {
+    const chrome = await plainRemembered();
+    const repair = brokenIndexedDB();
+    const auth = await import('../../src/background/auth');
+    expect(await auth.getToken()).toBe('tok');
+    expect(await auth.connection()).toMatchObject({ connected: true, remembered: true });
+    expect(await auth.disconnect()).toMatchObject({ connected: false });
+    await plainRemembered();
+    repair();
+    vi.resetModules();
+    const restarted = await import('../../src/background/auth');
+    expect(await restarted.getToken()).toBe('tok');
+    expect(chrome.storage.local.dump().githubCredential).toMatchObject({ v: 1 });
+  });
+
+  it('never deletes a remembered sign-in because IndexedDB failed for a moment', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const first = await import('../../src/background/auth');
+    await first.connect('github_pat_keep', true);
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    const repair = brokenIndexedDB();
+    vi.resetModules();
+    const restarted = await import('../../src/background/auth');
+    expect(await restarted.connection()).toMatchObject({ connected: false });
+    expect(chrome.storage.local.dump().githubCredential).toMatchObject({ v: 1 });
+    repair();
+    expect(await restarted.getToken()).toBe('github_pat_keep');
+  });
+
+  it('uses one key when two sign-ins are sealed at the same moment', async () => {
+    const vault = await import('../../src/background/vault');
+    const [a, b] = await Promise.all([vault.seal('first'), vault.seal('second')]);
+    expect(await vault.unseal(a)).toBe('first');
+    expect(await vault.unseal(b)).toBe('second');
+  });
+
+  it('a late 401 for the previous token never marks the new sign-in as rejected', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.connect('old', true);
+    // Make the 'rejected' write slow, so it would land after the new sign-in is stored.
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    const set = chrome.storage.local.set.getMockImplementation()!;
+    chrome.storage.local.set.mockImplementation(async (items: Record<string, unknown>) => {
+      if (!('githubCredential' in items)) await new Promise((r) => setTimeout(r, 30));
+      return set(items);
+    });
+    await Promise.all([auth.markInvalid('old'), auth.connect('new', true)]);
+    expect(await auth.connection()).toMatchObject({ connected: true, invalid: false });
+    expect(await auth.getToken()).toBe('new');
+    vi.resetModules();
+    const restarted = await import('../../src/background/auth');
+    expect(await restarted.connection()).toMatchObject({ connected: true, invalid: false });
+  });
+
+  it('clears the rejected flag when the same credential works again', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.connect('flaky', false);
+    await auth.markInvalid('flaky');
+    expect((await auth.connection()).invalid).toBe(true);
+    const transport = await import('../../src/background/transport');
+    await transport.authenticatedFetch('https://api.github.com/repos/a/b');
+    await vi.waitFor(async () => expect((await auth.connection()).invalid).toBe(false));
   });
 });
 

@@ -31,37 +31,71 @@ let remembered = false;
 let meta: Meta = {};
 let initialized: Promise<void> | undefined;
 
+/** Credential changes run one at a time, so a late 401 can never overwrite a newer sign-in. */
+let queue: Promise<unknown> = Promise.resolve();
+function exclusive<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => {});
+  return run;
+}
+
 export function initializeAuth() {
-  initialized ??= (async () => {
-    // Firefox has no setAccessLevel; Chrome uses it to hide storage from content scripts.
-    await chrome.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
-    await chrome.storage.session.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
-    type Stored = { [KEY]?: string | Sealed; [META]?: Meta };
-    const session = (await chrome.storage.session.get([KEY, META])) as Stored;
-    const local = (await chrome.storage.local.get([KEY, META])) as Stored;
-    const saved = local[KEY];
-    if (saved) {
-      // 0.3.0 stored remembered credentials in plain text: seal them on first start.
-      credential = typeof saved === 'string' ? saved : isSealed(saved) ? await unseal(saved) : undefined;
-      if (typeof saved === 'string') await chrome.storage.local.set({ [KEY]: await seal(saved) });
-      if (credential) {
-        remembered = true;
-        meta = local[META] ?? {};
-      } else {
-        // The key is gone (for example, extension data was partly cleared): sign out cleanly.
-        await chrome.storage.local.remove([KEY, META]);
-        remembered = false;
-        meta = {};
-      }
-      // 0.3.0 also kept a session copy of remembered credentials; keep a single copy.
-      if (session[KEY]) await chrome.storage.session.remove([KEY, META]);
-    } else {
-      credential = typeof session[KEY] === 'string' ? session[KEY] : undefined;
-      remembered = false;
-      meta = session[META] ?? {};
-    }
-  })();
+  initialized ??= exclusive(load).catch((error) => {
+    // Never cache a failed start: the next call (or the next worker) tries again.
+    initialized = undefined;
+    throw error;
+  });
   return initialized;
+}
+
+async function load() {
+  // Firefox has no setAccessLevel; Chrome uses it to hide storage from content scripts.
+  await chrome.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
+  await chrome.storage.session.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
+  type Stored = { [KEY]?: string | Sealed; [META]?: Meta };
+  const session = (await chrome.storage.session.get([KEY, META])) as Stored;
+  const local = (await chrome.storage.local.get([KEY, META])) as Stored;
+  const saved = local[KEY];
+  if (saved) {
+    let opened: string | undefined;
+    try {
+      opened = typeof saved === 'string' ? saved : isSealed(saved) ? await unseal(saved) : undefined;
+    } catch {
+      // IndexedDB failed: stay signed out for now but keep the stored sign-in for the next start.
+      credential = undefined;
+      remembered = false;
+      meta = {};
+      retryLater();
+      return;
+    }
+    credential = opened;
+    // 0.3.0 stored remembered credentials in plain text: seal them on first start. If that
+    // fails, keep the sign-in working and try again on the next start.
+    if (typeof saved === 'string')
+      await seal(saved)
+        .then((sealed) => chrome.storage.local.set({ [KEY]: sealed }))
+        .catch(retryLater);
+    if (credential) {
+      remembered = true;
+      meta = local[META] ?? {};
+    } else {
+      // The key is gone (for example, extension data was partly cleared): sign out cleanly.
+      await chrome.storage.local.remove([KEY, META]);
+      remembered = false;
+      meta = {};
+    }
+    // 0.3.0 also kept a session copy of remembered credentials; keep a single copy.
+    if (session[KEY]) await chrome.storage.session.remove([KEY, META]);
+  } else {
+    credential = typeof session[KEY] === 'string' ? session[KEY] : undefined;
+    remembered = false;
+    meta = session[META] ?? {};
+  }
+}
+
+/** Lets the next initializeAuth() call run the start-up checks again. */
+function retryLater() {
+  queueMicrotask(() => (initialized = undefined));
 }
 
 export async function getToken() {
@@ -103,11 +137,14 @@ const areaFor = (remember: boolean) => (remember ? chrome.storage.local : chrome
 async function store(token: string, remember: boolean, method: Method) {
   const login = await identify(token);
   const nextMeta: Meta = { login, method };
-  await areaFor(!remember).remove([KEY, META]);
-  await areaFor(remember).set({ [KEY]: remember ? await seal(token) : token, [META]: nextMeta });
-  credential = token;
-  remembered = remember;
-  meta = nextMeta;
+  const value = remember ? await seal(token) : token;
+  await exclusive(async () => {
+    await areaFor(!remember).remove([KEY, META]);
+    await areaFor(remember).set({ [KEY]: value, [META]: nextMeta });
+    credential = token;
+    remembered = remember;
+    meta = nextMeta;
+  });
   return connection();
 }
 
@@ -121,19 +158,33 @@ export async function connect(token: string, remember: boolean) {
 
 /** Called when GitHub answers 401 for the stored credential, so Settings can ask the user to reconnect. */
 export async function markInvalid(token: string) {
+  await setInvalid(token, true);
+}
+
+/** A later successful request with the same credential clears the flag (for example after a GitHub outage). */
+export async function markValid(token: string) {
+  await setInvalid(token, false);
+}
+
+async function setInvalid(token: string, invalid: boolean) {
   await initializeAuth();
-  if (!credential || credential !== token || meta.invalid) return;
-  meta = { ...meta, invalid: true };
-  await areaFor(remembered).set({ [META]: meta });
+  if (credential !== token || Boolean(meta.invalid) === invalid) return;
+  await exclusive(async () => {
+    if (credential !== token || Boolean(meta.invalid) === invalid) return;
+    meta = { ...meta, invalid };
+    await areaFor(remembered).set({ [META]: meta });
+  });
 }
 
 export async function disconnect() {
-  await initializeAuth();
-  await chrome.storage.session.remove([KEY, META, DEVICE]);
-  await chrome.storage.local.remove([KEY, META]);
-  credential = undefined;
-  remembered = false;
-  meta = {};
+  await initializeAuth().catch(() => {});
+  await exclusive(async () => {
+    await chrome.storage.session.remove([KEY, META, DEVICE]);
+    await chrome.storage.local.remove([KEY, META]);
+    credential = undefined;
+    remembered = false;
+    meta = {};
+  });
   return connection();
 }
 

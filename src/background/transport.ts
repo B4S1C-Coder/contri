@@ -1,4 +1,4 @@
-import { getToken, markInvalid } from './auth';
+import { getToken, markInvalid, markValid } from './auth';
 
 /**
  * All GitHub traffic goes through here: it adds the token, limits concurrency,
@@ -109,6 +109,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
         .catch(() => ({}))) as { message?: string };
       if (/secondary rate|abuse detection/i.test(body.message ?? '')) block(Date.now() + 60_000);
     }
+    if (response.ok && token) void markValid(token).catch(() => {});
     if (response.status === 401 && token) {
       await markInvalid(token);
       throw new Error('Your GitHub sign-in expired or was revoked. Reconnect in Settings.');
