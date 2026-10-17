@@ -23,3 +23,9 @@
 @media(max-width:600px){.journey{height:260px;margin-top:10px}.wave-message{width:105px;padding:9px 8px;border-radius:12px 12px 12px 4px}.wave-message b{font-size:10px;line-height:1.5}.wave-message span{font-size:6px;letter-spacing:.5px}.wave-message small{font-size:7px}.hero-copy h1{font-size:43px}.wave-ready .waypoint.two .wave-message{border-radius:4px 12px 12px 12px}}
 /* Touch targets: at least 24×24 px (WCAG 2.5.8). */
 .announcement a,.site-footer a,.nav-links a{display:inline-flex;align-items:center;min-height:24px}#demo-minimize,.note-right>a{min-width:24px;min-height:24px;display:inline-grid;place-items:center}
+/* Icons are inline SVG, drawn in the text colour, so every device shows the same glyphs
+   (the font has no arrows or stars, and phones substitute their own or even emoji). */
+.i{width:1em;height:1em;flex:none;display:inline-block;vertical-align:-.14em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}.i .fill,.i-fill{fill:currentColor}.i-fill{stroke:none}
+.brand-mark{border:0;border-radius:0;transform:none;display:block;flex:none}.menu-toggle{display:none;place-items:center;font-size:16px}.faq summary>span{flex:none}
+@media(max-width:600px){.menu-toggle{display:grid}}
+@media(max-width:600px){.journey{margin-top:34px}}
