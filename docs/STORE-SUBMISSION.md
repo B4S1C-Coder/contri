@@ -6,6 +6,8 @@ The code-side checks pass on the release build (see [RELEASE-CHECKLIST.md](RELEA
 
 **Upload this file:** `contri-v<version>.zip` from the GitHub release (not the `-firefox` zip, not "Source code"). `manifest.json` is at its root and `npm run verify:package` checks it.
 
+**Before that release is built**, set the repository variable `CONTRI_GITHUB_CLIENT_ID` (Settings → Secrets and variables → Actions → Variables) to the client ID of a GitHub OAuth App with device flow enabled. Without it the ZIP only offers token sign-in, and the listing's “Sign in with GitHub” would be inaccurate. After installing the ZIP, check that Settings shows **Sign in with GitHub**. A ZIP built locally without `.env` has no client ID and must not be uploaded.
+
 ## 1. Name
 
 CONTRI — Open Source Compass
@@ -48,14 +50,14 @@ Help people decide where and how to contribute to public GitHub projects, using 
 
 Answer from what the code does (summarised in [PRIVACY.md](../PRIVACY.md)). Recommended, conservative answers:
 
-| Dashboard category                                     | Declare? | Why                                                                                                                                                 |
-| ------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication information                             | Yes      | Optional GitHub token, stored on the device and sent only to api.github.com.                                                                        |
-| Web history                                            | Yes      | The repository and issue in the current github.com URL are sent to api.github.com to fetch evidence. Nothing else is read and no history is stored. |
-| Website content                                        | Yes      | Public issue text, comments and repository data are read from GitHub and processed on the device (including by Chrome's on-device AI).              |
-| Personally identifiable information                    | No       | CONTRI does not ask for name, email or address. Public GitHub usernames appear in public data it displays.                                          |
-| Personal communications                                | No       | No email, chat or messages are read.                                                                                                                |
-| Location, health, financial and payment, user activity | No       | Not collected. No clicks, keystrokes or mouse movement are recorded.                                                                                |
+| Dashboard category                                     | Declare? | Why                                                                                                                                                                                                                |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authentication information                             | Yes      | Optional GitHub token, stored on the device and sent only to api.github.com.                                                                                                                                       |
+| Web history                                            | Yes      | The repository and issue in the current github.com URL are sent to api.github.com to fetch evidence, and cached reports are filed under them on the device (minutes to 7 days). No other browsing history is kept. |
+| Website content                                        | Yes      | Public issue text, comments and repository data are read from GitHub and processed on the device (including by Chrome's on-device AI).                                                                             |
+| Personally identifiable information                    | No       | CONTRI does not ask for name, email or address. Public GitHub usernames appear in public data it displays.                                                                                                         |
+| Personal communications                                | No       | No email, chat or messages are read.                                                                                                                                                                               |
+| Location, health, financial and payment, user activity | No       | Not collected. No clicks, keystrokes or mouse movement are recorded.                                                                                                                                               |
 
 Certify all three Limited Use statements (no sale, no use unrelated to the single purpose, no creditworthiness or lending use). The required affirmative statement is published in PRIVACY.md under **Limited Use**.
 
@@ -91,7 +93,7 @@ Anonymous mode has GitHub's limit of 60 requests per hour. If a limit message ap
 | ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Icon                    | 128×128 PNG, in the ZIP | `public/icon-128.png`                                                                                            |
 | Small promotional image | 440×280                 | `docs/store/promo-small-440x280.png`                                                                             |
-| Screenshots (1–5)       | 1280×800                | `docs/store/screenshot-*.png`, captured from the installed extension on a mock GitHub with labelled example data |
+| Screenshots (4 of 1–5)  | 1280×800                | `docs/store/screenshot-*.png`, captured from the installed extension on a mock GitHub with labelled example data |
 | Marquee (optional)      | 1400×560                | `docs/store/promo-marquee-1400x560.png`                                                                          |
 
 Screenshots show the real installed UI, but on the test mock of GitHub with example data (`acme/widgets`), because the build environment cannot reach github.com. They are accurate about the interface; do not describe their numbers as real project statistics. Better, and recommended before a public launch: replace them with captures on real GitHub. Install the release ZIP, open a real repository and issue, set the browser window so the page is 1280×800, and take the same four views (issue availability, Overview, Team, dark mode).

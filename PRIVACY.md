@@ -4,7 +4,7 @@ CONTRI has no backend and no analytics. It reads public GitHub data from your br
 
 ## What it reads
 
-The extension runs on github.com. It reads the repository and issue number in the current page's URL to fetch public evidence from `api.github.com`. It does not store your browsing history. GitHub receives ordinary request metadata (such as your IP address); requests never include your GitHub cookies.
+The extension runs on github.com. It reads the repository and issue number in the current page's URL to fetch public evidence from `api.github.com`. It does not keep a browsing history; cached reports (below) are filed under the repository they describe. GitHub receives ordinary request metadata (such as your IP address); requests never include your GitHub cookies.
 
 Only public repositories are analyzed, even if your sign-in could see more. Private cross-references are filtered out.
 
@@ -16,7 +16,7 @@ Only public repositories are analyzed, even if your sign-in could see more. Priv
 The token is kept in exactly one place:
 
 - **By default:** in session storage, which Chrome keeps in memory. It is forgotten when the browser closes.
-- **“Stay signed in”:** in extension-local storage, encrypted with AES-GCM (256-bit). The key is a non-extractable Web Crypto key kept in the extension's own IndexedDB, so its raw bytes cannot be read by script. This protects the token against casual disclosure (for example in profile backups); it is not a password manager, and someone with full control of your computer and browser profile could still use your session.
+- **“Stay signed in”:** in extension-local storage, encrypted with AES-GCM (256-bit). The key is a non-extractable Web Crypto key kept in the extension's own IndexedDB, so script cannot read its raw bytes. This keeps the token out of plain text, so tools that scan files for GitHub tokens do not find it. The key lives in the same browser profile, so a full copy of your profile (for example a backup) contains both, and someone with full control of your computer could still use your session. It is not a password manager.
 
 Extension storage is restricted to trusted extension contexts, so scripts running on GitHub pages, including CONTRI's own badges, cannot read the token. It is sent only to `api.github.com` over HTTPS. If GitHub rejects it (expired or revoked), Settings tells you to reconnect. Sign out in Settings, and revoke access at https://github.com/settings/applications (OAuth) or https://github.com/settings/personal-access-tokens (tokens).
 
@@ -26,7 +26,7 @@ Extension storage is restricted to trusted extension contexts, so scripts runnin
 
 ## Stored on your device
 
-- Cached public reports (up to 80, expiring after a few minutes to 24 hours) and maintainer rosters (7 days). Clear them in Settings.
+- Cached public reports (up to 80, expiring after a few minutes to 24 hours) and maintainer rosters (7 days). Each cached report is filed under the repository (and issue number) it describes, so the cache shows which repositories you looked at recently. CONTRI keeps no other browsing history. Clear the cache in Settings.
 - Your shortlist and notes (up to 50 items), and watched issues (up to 10).
 - Preferences and widget position.
 
@@ -58,7 +58,7 @@ The contribution brief is assembled locally. **Copy brief** puts it on your clip
 | Data                                          | Where it goes                                   | Kept                                          |
 | --------------------------------------------- | ----------------------------------------------- | --------------------------------------------- |
 | GitHub token (optional)                       | Your device; sent only to `api.github.com`      | Until browser exit, or sign-out if remembered |
-| Repository and issue in the current page URL  | Used on your device to query `api.github.com`   | Not stored as history                         |
+| Repository and issue in the current page URL  | Used on your device to query `api.github.com`   | Only inside cached reports                    |
 | Public GitHub data (activity, issues, people) | Fetched from `api.github.com`, cached on device | Minutes to 7 days                             |
 | Your shortlist, notes and watched issues      | Your device only                                | Until you remove them                         |
 | Issue text for on-device AI                   | Chrome's built-in model on your device          | Not stored                                    |
