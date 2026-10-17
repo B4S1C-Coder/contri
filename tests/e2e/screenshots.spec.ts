@@ -123,7 +123,10 @@ test('README screenshots and social card', async () => {
       <img src="data:image/png;base64,${widget.toString('base64')}" style="height:${panel}px;border-radius:${Math.round(panel / 22)}px;box-shadow:0 20px 50px #0c1f1d80" />
     </div></body>`);
     await page.waitForTimeout(300);
-    await sharp(await page.screenshot()).resize(width, height).png().toFile(`${STORE}/${name}.png`);
+    await sharp(await page.screenshot())
+      .resize(width, height)
+      .png()
+      .toFile(`${STORE}/${name}.png`);
     await page.close();
   };
   await promo(440, 280, 'promo-small-440x280');

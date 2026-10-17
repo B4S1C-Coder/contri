@@ -8,7 +8,8 @@ import { startMockGitHub } from './mock-github';
  */
 
 const PORT = 8443;
-const DIST = resolve('dist');
+// CONTRI_DIST lets the suite run against an unzipped release package instead of dist/.
+const DIST = resolve(process.env.CONTRI_DIST ?? 'dist');
 
 type Fixtures = { context: BrowserContext; extensionId: string; mock: ReturnType<typeof startMockGitHub> };
 
