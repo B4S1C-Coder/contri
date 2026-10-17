@@ -86,3 +86,17 @@ export function repoPath(repo: string): string {
   if (!parsed) throw new Error('Enter a public repository as owner/name or a GitHub repository URL.');
   return `/repos/${parsed.split('/').map(encodeURIComponent).join('/')}`;
 }
+
+/**
+ * Links rendered from API data must be plain https URLs. Preact does not block
+ * `javascript:` hrefs, so anything else is dropped rather than rendered.
+ */
+export function safeHref(href: string | null | undefined): string | undefined {
+  if (!href) return undefined;
+  try {
+    const url = new URL(href);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}

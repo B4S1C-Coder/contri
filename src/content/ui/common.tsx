@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Event } from '../../core/metrics';
 import type { Verdict } from '../../core/verdict';
 import { ago, time } from '../../shared/format';
+import { safeHref } from '../../shared/repo';
 import { CheckIcon, ExternalIcon, RefreshIcon, WarningIcon } from './icons';
 
 export function Note({ children, tone = 'warn' }: { children: ReactNode; tone?: 'warn' | 'info' }) {
@@ -14,8 +15,10 @@ export function Note({ children, tone = 'warn' }: { children: ReactNode; tone?: 
 }
 
 export function Ext({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
+  const safe = safeHref(href);
+  if (!safe) return <span className={className}>{children}</span>;
   return (
-    <a href={href} target="_blank" rel="noreferrer" className={className}>
+    <a href={safe} target="_blank" rel="noreferrer" className={className}>
       {children}
       <ExternalIcon size={11} />
     </a>

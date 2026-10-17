@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePage, parseRepo } from '../../src/shared/repo';
+import { parsePage, parseRepo, safeHref } from '../../src/shared/repo';
 import {
   activity,
   actor,
@@ -33,6 +33,20 @@ describe('repository parsing', () => {
     expect(parsePage('https://github.com/a/b')).toEqual({ repo: 'a/b', issue: null, pull: null });
     expect(parsePage('https://github.com/a/b/issues/new').issue).toBeNull();
     expect(parsePage('https://github.com/notifications').repo).toBeNull();
+  });
+});
+
+describe('safe links', () => {
+  it('only renders https links from API data', () => {
+    expect(safeHref('https://github.com/a/b/pull/1')).toBe('https://github.com/a/b/pull/1');
+    expect(safeHref('javascript:alert(1)')).toBeUndefined();
+    expect(safeHref('JaVaScRiPt:alert(1)')).toBeUndefined();
+    expect(safeHref('data:text/html,<script>alert(1)</script>')).toBeUndefined();
+    expect(safeHref('http://github.com/a/b')).toBeUndefined();
+    expect(safeHref('https://user:pass@github.com/')).toBeUndefined();
+    expect(safeHref('p8')).toBeUndefined();
+    expect(safeHref('')).toBeUndefined();
+    expect(safeHref(null)).toBeUndefined();
   });
 });
 

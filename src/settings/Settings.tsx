@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import type { DeviceStart } from '../background/auth';
 import { call, type ConnectionInfo, type Prefs } from '../shared/protocol';
 import { REPO_URL, WEBSITE_URL } from '../shared/config';
+import { safeHref } from '../shared/repo';
 import { Wordmark } from '../content/ui/icons';
 import '../content/widget.css';
 import './settings.css';
@@ -44,7 +45,8 @@ function DeviceSignIn({ remember, onConnected }: { remember: boolean; onConnecte
   const start = async () => {
     setStatus('');
     try {
-      const value = await call('deviceStart', {});
+      const start = await call('deviceStart', {});
+      const value = { ...start, verificationUri: safeHref(start.verificationUri) ?? 'https://github.com/login/device' };
       setFlow(value);
       poll(value.interval);
       window.open(value.verificationUri, '_blank', 'noopener');
