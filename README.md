@@ -68,7 +68,7 @@ CONTRI follows GitHub's light or dark appearance with the same teal glass look.
 3. Click **Load unpacked** and choose the unzipped folder.
 4. A welcome page opens. Sign in with GitHub (or skip and use anonymous mode).
 
-A Chrome Web Store listing is being prepared — see [docs/STORE-SUBMISSION.md](docs/STORE-SUBMISSION.md).
+CONTRI has been submitted to the Chrome Web Store and is in review — see [docs/STORE-SUBMISSION.md](docs/STORE-SUBMISSION.md). Until it is approved, install the release ZIP as above.
 
 ### From source
 
@@ -212,7 +212,7 @@ Chrome, Edge, Brave and other Chromium browsers (version 124+). Firefox 128+ is 
 - [x] Sign in with GitHub (device flow) and GraphQL reports
 - [x] On-device AI summaries
 - [x] Watched issues with notifications
-- [ ] Chrome Web Store listing
+- [ ] Chrome Web Store listing (submitted, in review)
 - [ ] Badges on GitHub's issue list and search results
 - [ ] Translations
 - [ ] Maintainer view: who is waiting longest for a reply
