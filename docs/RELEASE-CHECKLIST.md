@@ -22,6 +22,6 @@
 ## Publish
 
 1. Update `version` in `package.json` and `public/manifest.json`, and add a `CHANGELOG.md` entry at the top.
-2. Merge to `main`, then tag: `git tag v0.3.0 && git push origin v0.3.0`.
-3. The Release workflow builds the Chrome and Firefox packages and publishes a GitHub Release with the changelog entry. Set the repository variable `CONTRI_GITHUB_CLIENT_ID` first if the release should offer “Sign in with GitHub”.
+2. Merge to `main`. The Release workflow sees a version with no release yet, builds and verifies the Chrome and Firefox packages, creates the `v<version>` tag and publishes a GitHub Release with the changelog entry. (Pushing a `v<version>` tag or running the workflow from the Actions tab does the same.)
+3. Set the repository variable `CONTRI_GITHUB_CLIENT_ID` first if the release should offer “Sign in with GitHub”.
 4. Upload the Chrome ZIP to the Chrome Web Store (see [STORE-SUBMISSION.md](STORE-SUBMISSION.md)).

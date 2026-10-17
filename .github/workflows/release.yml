@@ -1,34 +1,78 @@
 name: Release
+
+# Publishes a GitHub Release with the Chrome and Firefox packages.
+# Runs when main gets a package.json version that has no release yet (the tag is
+# created automatically), when a v* tag is pushed, or manually from the Actions tab.
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  workflow_dispatch:
+
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+
+      - name: Decide whether to release
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($version)"; exit 1
+          fi
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "Release $version already exists; nothing to do."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.version.outputs.publish == 'true'
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - name: Check the tag matches package.json
-        run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
-      - run: npm test
+
+      - if: steps.version.outputs.publish == 'true'
+        run: npm ci
+
+      - if: steps.version.outputs.publish == 'true'
+        run: npm test
+
       - name: Build Chrome and Firefox packages
+        if: steps.version.outputs.publish == 'true'
         env:
           VITE_GITHUB_CLIENT_ID: ${{ vars.CONTRI_GITHUB_CLIENT_ID }}
         run: |
           npm run package
           npm run verify:package
           node scripts/package.mjs --firefox
+
       - name: Publish GitHub release
+        if: steps.version.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          notes=$(awk '/^## /{n++} n==1' CHANGELOG.md)
-          gh release create "$GITHUB_REF_NAME" contri-v*.zip contri-v*.zip.sha256 \
-            --title "CONTRI $GITHUB_REF_NAME" --notes "$notes"
+          awk '/^## /{n++} n==1' CHANGELOG.md > notes.md
+          cat >> notes.md <<'EOF'
+
+          ### Install
+          1. Download `contri-*.zip` below (not the source code) and unzip it.
+          2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the unzipped folder.
+          3. Open any public GitHub repository. Firefox: use the `-firefox.zip` via `about:debugging` (experimental).
+          EOF
+          gh release create "$TAG" contri-v*.zip contri-v*.zip.sha256 \
+            --target "$GITHUB_SHA" --title "contri. $TAG" --notes-file notes.md --latest
