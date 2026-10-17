@@ -71,7 +71,7 @@ test('repository sidebar badge sits inside GitHub’s About box', async ({ conte
   await page.goto('https://github.com/acme/widgets');
   const badge = page.locator('.BorderGrid-cell #contri-repo-badge');
   await expect(badge).toBeVisible();
-  await expect(badge.locator('button')).toContainText('CONTRI');
+  await expect(badge.locator('button')).toContainText('contri.');
 });
 
 test('issue badge checks availability on click and finds a stale claim', async ({ context, extensionId, mock }) => {

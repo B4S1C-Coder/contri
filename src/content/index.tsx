@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type PointerEvent as ReactPointerEven
 import { parsePage, type PageContext } from '../shared/repo';
 import { call, DEFAULT_PREFS, type Prefs } from '../shared/protocol';
 import { App } from './ui/App';
-import { CompassIcon } from './ui/icons';
+import { LogoMark } from './ui/icons';
 import { installFonts } from './fonts';
 import { onNavigate } from './navigation';
 import { watchTheme } from './theme';
@@ -152,7 +152,7 @@ function boot() {
           title="CONTRI — open source compass"
           onClick={() => setMode('open')}
         >
-          <CompassIcon size={26} />
+          <LogoMark size={26} />
         </button>
       );
     return (

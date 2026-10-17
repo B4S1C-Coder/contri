@@ -9,3 +9,4 @@ export const GITHUB_CLIENT_ID: string = (import.meta.env?.VITE_GITHUB_CLIENT_ID 
 
 export const PRODUCT = 'CONTRI';
 export const REPO_URL = 'https://github.com/alphasafal/contri';
+export const WEBSITE_URL = 'https://contri-two.vercel.app';

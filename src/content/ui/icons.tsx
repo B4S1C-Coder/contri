@@ -23,12 +23,37 @@ function Icon({ size = 16, children, ...rest }: IconProps & { children: ReactNod
   );
 }
 
-export const CompassIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z" fill="currentColor" fillOpacity={0.25} />
-  </Icon>
-);
+/**
+ * The contri. symbol: an arrow rising out of a circle (same mark as the website).
+ * Geometry is shared with scripts/icons.mjs.
+ */
+export function LogoMark({ size = 20, ...rest }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" focusable="false" {...rest}>
+      <circle cx="50" cy="50" r="44" stroke="currentColor" strokeOpacity="0.62" strokeWidth="5" />
+      <path
+        d="M30 81 74 15M55 20.5l19-5.5 2 19"
+        stroke="currentColor"
+        strokeWidth="6.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Symbol + "contri." wordmark, as on the website. */
+export function Wordmark({ size = 20 }: { size?: number }) {
+  return (
+    <span className="cc-wordmark" style={{ fontSize: size }}>
+      <LogoMark size={Math.round(size * 1.05)} />
+      <span>
+        contri<span className="cc-wordmark-dot">.</span>
+      </span>
+    </span>
+  );
+}
+
 export const ExternalIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />

@@ -23,7 +23,7 @@ button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;p
 :host([data-theme=dark]) button{border-color:#ffffff3d;background:linear-gradient(145deg,#2a3f3ff2,#1c2e2cf5 58%,#243328f2);box-shadow:0 4px 14px #0000004d,inset 0 1px 0 #ffffff22}
 button:hover{filter:brightness(1.08)}
 button:focus-visible{outline:2px solid #fce9b6;outline-offset:2px}
-.brand{font-size:9px;letter-spacing:1.6px;font-weight:600;opacity:.85}
+.brand{display:inline-flex;align-items:center;gap:4px;font-weight:600;letter-spacing:-.04em;font-size:13px;padding-right:7px;margin-right:1px;border-right:1px solid #ffffff38}.brand svg{width:15px;height:15px;flex:none}
 .dot{width:8px;height:8px;border-radius:50%;flex:none;background:#d4e2da}
 .good .dot{background:#8fd6a8}.warn .dot{background:#f2cf7c}.busy .dot{background:#f0a08e}.unknown .dot{background:#cfd8d2}
 .label{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -61,10 +61,46 @@ function render(
     el.textContent = text;
     button.append(el);
   };
+  button.append(brand());
   add(parts.loading ? 'spin' : 'dot');
-  add('brand', 'CONTRI');
   add('label', parts.label);
   if (parts.detail) add('muted', parts.detail);
+}
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+/** The contri. symbol + wordmark, built with DOM APIs (no innerHTML on GitHub pages). */
+function brand() {
+  const wrap = document.createElement('span');
+  wrap.className = 'brand';
+  const svg = document.createElementNS(SVG, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+  const circle = document.createElementNS(SVG, 'circle');
+  for (const [k, v] of Object.entries({
+    cx: '50',
+    cy: '50',
+    r: '44',
+    stroke: 'currentColor',
+    'stroke-opacity': '.62',
+    'stroke-width': '7',
+  }))
+    circle.setAttribute(k, v);
+  const arrow = document.createElementNS(SVG, 'path');
+  for (const [k, v] of Object.entries({
+    d: 'M30 81 74 15M55 20.5l19-5.5 2 19',
+    stroke: 'currentColor',
+    'stroke-width': '9',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  }))
+    arrow.setAttribute(k, v);
+  svg.append(circle, arrow);
+  const text = document.createElement('span');
+  text.textContent = 'contri.';
+  wrap.append(svg, text);
+  return wrap;
 }
 
 const openWidget = () => window.dispatchEvent(new CustomEvent(OPEN_EVENT));
@@ -171,7 +207,7 @@ function repoBadge(repo: string, settings: Settings) {
       tone: recent === null ? undefined : recent > 0 ? 'good' : 'warn',
       label: parts[0],
       detail: parts[1],
-      title: 'Open CONTRI for details',
+      title: 'Open contri. for details',
     });
   })();
 }

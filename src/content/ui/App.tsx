@@ -7,7 +7,7 @@ import { DiscoverTab } from './DiscoverTab';
 import { GlassEffect } from './GlassEffect';
 import { GuideTab } from './GuideTab';
 import { useRequest } from './hooks';
-import { ArrowIcon, CheckIcon, CloseIcon, CompassIcon, GearIcon, GripIcon, MinusIcon } from './icons';
+import { ArrowIcon, CheckIcon, CloseIcon, GearIcon, GripIcon, MinusIcon, Wordmark } from './icons';
 import { IssuesTab } from './IssuesTab';
 import { OverviewTab } from './OverviewTab';
 import { SavedTab } from './SavedTab';
@@ -98,12 +98,7 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
         >
           <GripIcon size={17} />
         </button>
-        <CompassIcon size={21} />
-        <span>
-          <b>CONTRI</b>
-          <br />
-          OPEN SOURCE COMPASS
-        </span>
+        <Wordmark size={18} />
         <div className="cc-header-actions">
           <button aria-label="Settings and GitHub sign-in" onClick={openSettings}>
             <GearIcon size={16} />

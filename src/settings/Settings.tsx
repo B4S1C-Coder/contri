@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { DeviceStart } from '../background/auth';
 import { call, type ConnectionInfo, type Prefs } from '../shared/protocol';
-import { REPO_URL } from '../shared/config';
-import { CompassIcon } from '../content/ui/icons';
+import { REPO_URL, WEBSITE_URL } from '../shared/config';
+import { Wordmark } from '../content/ui/icons';
 import '../content/widget.css';
 import './settings.css';
 
@@ -199,8 +199,10 @@ function Settings() {
   return (
     <main className="cc-settings">
       <header>
-        <CompassIcon size={26} />
-        CONTRI
+        <Wordmark size={26} />
+        <a className="cc-site" href={WEBSITE_URL} target="_blank" rel="noreferrer">
+          contri-two.vercel.app ↗
+        </a>
       </header>
       <h1>
         {status?.connected ? 'You’re connected.' : welcome.current ? 'Welcome to CONTRI.' : 'A clearer connection.'}
@@ -283,6 +285,10 @@ function Settings() {
         )}
         <p className="cc-small">
           Public repositories only · no analytics · no backend · AI summaries run on your device.{' '}
+          <a href={WEBSITE_URL} target="_blank" rel="noreferrer">
+            Website ↗
+          </a>{' '}
+          ·{' '}
           <a href={`${REPO_URL}/blob/main/PRIVACY.md`} target="_blank" rel="noreferrer">
             Privacy details ↗
           </a>{' '}
