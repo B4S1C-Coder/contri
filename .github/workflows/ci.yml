@@ -20,6 +20,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Audit shipped dependencies
+        run: npm audit --omit=dev --audit-level=moderate
       - run: npm run format:check
       - run: npm run lint
       - run: npm run check:docs
@@ -45,7 +47,10 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - name: E2E, axe accessibility checks and the contrast audit
+        run: npm run test:e2e
+        env:
+          CONTRI_CONTRAST: '1'
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
