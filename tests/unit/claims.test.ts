@@ -127,9 +127,29 @@ describe('verdict', () => {
       issueState: 'open',
       link: { state: 'clear', prs: [] },
       claim: none,
-      commentsComplete: false,
+      discussion: { complete: false, inspected: 100 },
+      comments: 250,
     });
     expect(partial.label).toBe('Looks free');
     expect(partial.detail).toMatch(/Only the latest comments were checked for claims/);
+  });
+  it('is not green when no comment could be checked at all', () => {
+    const unchecked = verdict({
+      issueState: 'open',
+      link: { state: 'clear', prs: [] },
+      claim: none,
+      discussion: { complete: false, inspected: 0 },
+      comments: 12,
+    });
+    expect(unchecked).toMatchObject({ tone: 'unknown', label: 'Partly checked' });
+    expect(unchecked.detail).toMatch(/comments could not be loaded/);
+    const quiet = verdict({
+      issueState: 'open',
+      link: { state: 'clear', prs: [] },
+      claim: none,
+      discussion: { complete: true, inspected: 0 },
+      comments: 0,
+    });
+    expect(quiet.label).toBe('Looks free');
   });
 });

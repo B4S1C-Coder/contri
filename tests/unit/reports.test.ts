@@ -432,6 +432,64 @@ describe('issue insight', () => {
     expect(pages).toEqual(['3', '4', '5']);
   });
 
+  const longThread = (total: number, failComments = false) => {
+    const { fetcher, calls } = fakeGitHub([
+      repoRoute,
+      (u) =>
+        u.pathname === `${REPO}/issues/8`
+          ? json({
+              number: 8,
+              title: 'Busy',
+              html_url: 'https://github.com/acme/widgets/issues/8',
+              state: 'open',
+              created_at: isoAgo(30),
+              body: '',
+              user: { login: 'rep' },
+              assignees: [],
+              labels: [],
+              comments: total,
+            })
+          : undefined,
+      (u) => (u.pathname === `${REPO}/issues/8/timeline` ? json([]) : undefined),
+      (u) => {
+        if (u.pathname !== `${REPO}/issues/8/comments`) return undefined;
+        if (failComments) return json({ message: 'Server Error' }, 502);
+        const page = Number(u.searchParams.get('page'));
+        const rows = Array.from({ length: total }, (_, i) => ({
+          user: { login: `u${i}` },
+          author_association: 'NONE',
+          created_at: isoAgo(20 - i / 100),
+          html_url: `c${i}`,
+          body: 'Same here.',
+        }));
+        return json(rows.slice((page - 1) * 100, page * 100));
+      },
+    ]);
+    setTransport(fetcher);
+    return calls;
+  };
+  const pagesOf = (calls: string[]) =>
+    calls.filter((c) => c.includes('/comments')).map((c) => new URL(`https://x${c.slice(4)}`).searchParams.get('page'));
+
+  it('anonymous: a 400-comment thread costs exactly three comment requests', async () => {
+    const calls = longThread(400);
+    const report = await insight(createCtx(false), 'acme/widgets', 8);
+    expect(pagesOf(calls)).toEqual(['2', '3', '4']);
+    expect(report.discussion).toMatchObject({ complete: false, inspected: 300 });
+  });
+  it('anonymous: a thread of exactly 300 comments is read completely', async () => {
+    const calls = longThread(300);
+    const report = await insight(createCtx(false), 'acme/widgets', 8);
+    expect(pagesOf(calls)).toEqual(['1', '2', '3']);
+    expect(report.discussion).toMatchObject({ complete: true, inspected: 300 });
+  });
+  it('anonymous: when comments fail to load, the report says nothing was inspected', async () => {
+    longThread(12, true);
+    const report = await insight(createCtx(false), 'acme/widgets', 8);
+    expect(report.discussion).toMatchObject({ complete: false, inspected: 0 });
+    expect(report.warnings.join(' ')).toMatch(/claim detection is incomplete/);
+  });
+
   it('anonymous: reads linked PRs from the timeline and detects a stale claim', async () => {
     const { fetcher } = fakeGitHub([
       repoRoute,

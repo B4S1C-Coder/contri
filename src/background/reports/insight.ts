@@ -143,13 +143,14 @@ async function newestComments(
   total: number,
 ): Promise<{ values: RestComment[]; complete: boolean }> {
   const pages = Math.ceil(total / 100);
-  if (pages <= COMMENT_PAGES) return ctx.client.restAll<RestComment>(path, COMMENT_PAGES);
-  const values: RestComment[] = [];
-  for (let page = pages - COMMENT_PAGES + 1; page <= pages + 1; page++) {
-    const rows = await ctx.client.rest<RestComment[]>(`${path}?per_page=100&page=${page}`);
-    values.push(...rows);
-    if (rows.length < 100) break;
+  if (pages <= COMMENT_PAGES) {
+    const all = await ctx.client.restAll<RestComment>(path, COMMENT_PAGES);
+    // A full last page looks "maybe more" to restAll, but the issue says how many comments exist.
+    return { values: all.values, complete: all.complete || all.values.length >= total };
   }
+  const values: RestComment[] = [];
+  for (let page = pages - COMMENT_PAGES + 1; page <= pages; page++)
+    values.push(...(await ctx.client.rest<RestComment[]>(`${path}?per_page=100&page=${page}`)));
   return { values, complete: false };
 }
 

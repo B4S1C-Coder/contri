@@ -137,7 +137,8 @@ function issueBadge(repo: string, number: number, settings: Settings, state: Map
       issueState: report.issue.state,
       link: report.link,
       claim: report.claim,
-      commentsComplete: report.discussion.complete,
+      discussion: report.discussion,
+      comments: report.issue.comments,
     });
     render(badge.button, { tone: v.tone, label: v.label, detail: 'Open details', title: v.detail });
     badge.button.onclick = openWidget;

@@ -14,10 +14,13 @@ export function verdict(input: {
   issueState: string;
   link: { state: LinkState; prs: LinkedPR[] };
   claim: ClaimStatus;
-  /** False when only part of a long discussion was checked for claims. */
-  commentsComplete?: boolean;
+  /** Which comments were checked for claims (from the insight report). */
+  discussion?: { complete: boolean; inspected: number };
+  /** Total comments on the issue. */
+  comments?: number;
 }): Verdict {
-  const { issueState, link, claim, commentsComplete = true } = input;
+  const { issueState, link, claim, discussion, comments = 0 } = input;
+  const commentsComplete = discussion?.complete ?? true;
   if (issueState.toLowerCase() !== 'open') return { tone: 'busy', label: 'Closed', detail: 'This issue is closed.' };
   const open = link.prs.find((p) => p.state === 'open');
   if (open)
@@ -31,6 +34,12 @@ export function verdict(input: {
   if (claim.state === 'claimed' && claim.claim)
     return { tone: 'warn', label: `Claimed by @${claim.claim.login}`, detail: claim.note };
   if (claim.state === 'stale') return { tone: 'warn', label: 'Claim went quiet', detail: claim.note };
+  if (comments > 0 && discussion && discussion.inspected === 0)
+    return {
+      tone: 'unknown',
+      label: 'Partly checked',
+      detail: 'The comments could not be loaded, so claims were not checked. Read the thread before starting.',
+    };
   if (link.state === 'incomplete')
     return {
       tone: 'unknown',

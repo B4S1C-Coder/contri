@@ -27,7 +27,8 @@ export function IssueInsight({
     issueState: report.issue.state,
     link: report.link,
     claim: report.claim,
-    commentsComplete: report.discussion.complete,
+    discussion: report.discussion,
+    comments: report.issue.comments,
   });
   const { issue, link, claim, discussion } = report;
   return (

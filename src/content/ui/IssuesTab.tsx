@@ -67,7 +67,8 @@ function IssueCard({
             issueState: report.issue.state,
             link: report.link,
             claim: report.claim,
-            commentsComplete: report.discussion.complete,
+            discussion: report.discussion,
+            comments: report.issue.comments,
           })}
           compact
         />
@@ -132,7 +133,16 @@ export function IssuesTab({
   const bulk = result.value?.linkCheck === 'bulk';
   const isFree = (i: IssueRow) => {
     const r = reports[i.number];
-    if (r) return verdict({ issueState: r.issue.state, link: r.link, claim: r.claim }).tone === 'good';
+    if (r)
+      return (
+        verdict({
+          issueState: r.issue.state,
+          link: r.link,
+          claim: r.claim,
+          discussion: r.discussion,
+          comments: r.issue.comments,
+        }).tone === 'good'
+      );
     return bulk ? i.linkedOpen === 0 && !i.assignees.length : false;
   };
   const visible = onlyFree ? rows.filter(isFree) : rows;
