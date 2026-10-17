@@ -90,7 +90,7 @@ Anonymous mode works within GitHub's limit of **60 requests per hour**. Signing 
 - **Sign in with GitHub** uses the OAuth device flow: you get a short code, approve it on github.com, done. No password or token ever passes through CONTRI, and no scopes are requested (public, read-only access). Builds need a client ID — see below.
 - **Personal access token**: Settings walks you through creating a fine-grained, read-only token for public repositories.
 
-The sign-in lasts until the browser closes unless you choose “Stay signed in”. It is stored where GitHub pages cannot read it and is only ever sent to `api.github.com`.
+The sign-in is kept in memory until the browser closes unless you choose “Stay signed in”, which stores it encrypted (AES-GCM). Either way it lives where GitHub pages cannot read it and is only ever sent to `api.github.com`. If GitHub rejects it (expired or revoked), Settings asks you to reconnect.
 
 ### Configuring “Sign in with GitHub” for your build
 
@@ -116,12 +116,14 @@ Reports are cached (team: 6 hours, overview: 30 minutes, issue checks: 10 minute
 ```sh
 npm run dev          # layout preview of the widget (no live data)
 npm test             # unit tests (fixtures, no network)
-npm run test:e2e     # installs dist/ into Chromium and drives it on a mock GitHub
+npm run test:e2e     # installs dist/ into Chromium, drives it on a mock GitHub, runs axe accessibility checks
 npm run lint         # ESLint
 npm run format       # Prettier
 npm run check        # format check + lint + unit tests + build
 npm run package      # dist → contri-v<version>.zip (+ sha256)
 npm run verify:package
+CONTRI_CONTRAST=1 npx playwright test contrast   # WCAG AA text contrast over the glass
+CONTRI_PERF=1 npx playwright test perf           # content-script cost on GitHub pages
 ```
 
 For `test:e2e`, run `npm run build` first and install the browser once with `npx playwright install chromium`.
@@ -143,6 +145,28 @@ More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Honest numbers
 
 Every number links to its evidence. Unavailable data is shown as “—”, never as zero. Samples say how much they cover, and ≥ marks a lower bound. A missing linked PR does not prove nobody is working on an issue, and CONTRI says so. Full definitions: [docs/METRICS.md](docs/METRICS.md).
+
+## Known limitations
+
+- **Public evidence only.** CONTRI sees what GitHub's public API shows. Work nobody linked or mentioned is invisible, so “Looks free” is a strong hint, not a guarantee.
+- **Samples on big projects.** Charts, author counts and team reply times use the most recent items (up to 100 merged PRs, 20 PRs and issues per kind, the latest 100–300 comments of an issue). Every sampled number says so, and lower bounds are marked ≥.
+- **Claim detection is a heuristic** over English phrases such as “I'd like to work on this”, `/assign` or “assign me”. Other languages and unusual wording may be missed.
+- **Maintainer detection** uses GitHub's team badges, triage and merge activity, CODEOWNERS and the owner. Maintainers who never triage or merge in the sampled window may be missed.
+- **GitHub layout changes** can move or hide the inline badges until CONTRI is updated. The panel keeps working.
+- **On-device AI** needs a Chrome build with the built-in model; elsewhere CONTRI offers the copy-paste brief.
+- **Anonymous mode** shares GitHub's limit of 60 requests per hour with anything else on your network.
+
+## Troubleshooting
+
+| Symptom                                           | What to do                                                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| No launcher or badge after installing or updating | Reload the GitHub tab. Tabs opened before an install or update don't have the new content script yet.                           |
+| “GitHub request limit reached”                    | Wait until the time shown, or sign in (5,000 requests per hour).                                                                |
+| “Your GitHub sign-in expired or was revoked”      | Settings → Sign out, then sign in again or paste a new token.                                                                   |
+| “Not found on GitHub”                             | The repository is private, renamed or deleted. CONTRI only reads public repositories.                                           |
+| A badge is missing on an issue page               | GitHub may have changed its layout. The panel still works; please [open an issue](https://github.com/alphasafal/contri/issues). |
+| Numbers look stale                                | Use ↻ in the panel to refresh, or Settings → Clear cached reports.                                                              |
+| “Sign in with GitHub” is missing                  | The build has no OAuth client ID. Use a token, or see “Configuring Sign in with GitHub” above.                                  |
 
 ## Contributing
 

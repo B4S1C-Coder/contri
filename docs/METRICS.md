@@ -42,13 +42,13 @@ The verdict picks the first that applies:
 4. **Claimed by `@user`** — a non-team commenter offered to work on it within the last 21 days, or has an open PR.
 5. **Claim went quiet** — the latest claim is older than 21 days with no later comment or open PR from that person.
 6. **Partly checked** — references could not be checked completely.
-7. **Looks free** — none of the above.
+7. **Looks free** — none of the above. When only part of a long discussion was checked for claims, the detail says so.
 
-**Linked pull requests.** Signed in: GitHub's Development panel and closing keywords (`closedByPullRequestsReferences`) plus up to 50 timeline cross-references. Anonymous: up to 300 timeline cross-references (Development-panel links are not visible anonymously; CONTRI warns when one exists). Private repositories are filtered out. A cross-reference may be unrelated.
+**Linked pull requests.** Signed in: GitHub's Development panel and closing keywords (`closedByPullRequestsReferences`) plus the latest 50 timeline cross-references. Anonymous: up to 300 timeline cross-references (Development-panel links are not visible anonymously; CONTRI warns when one exists). Private repositories are filtered out. A cross-reference may be unrelated.
 
 **Claims.** Comments such as “I'd like to work on this”, “can I take this?”, “please assign me”, “/assign”, “I'm working on a fix”. Quoted replies and code blocks are ignored, questions like “is anyone working on this?” are not claims, and comments such as “I'm no longer working on this” or “feel free to take it” release a claim. Team members' comments are never treated as claims. This is a heuristic — always read the thread.
 
-**Discussion.** The latest 100 comments (anonymous: up to 300) give the latest human comment and the number of team comments.
+**Discussion.** Signed in: the latest 100 comments. Anonymous: all comments up to 300, or the newest 200–300 on longer threads (REST lists comments oldest first, so CONTRI reads the last pages). These give the latest human comment, the number of team comments and the claims; the caption shows how many comments were inspected.
 
 ## Discover
 
@@ -70,4 +70,8 @@ Summaries and “How do I start?” come from Chrome's built-in model and never 
 | Discover        | 6 h        | 2 h             |
 | Community files | 24 h       | 8 h             |
 
-Every report shows when it was checked and has a refresh button. Signing in or out clears cached reports.
+Every report shows when it was checked and has a refresh button; a failed request offers “Try again”. Signing in or out clears cached reports.
+
+## Missing data
+
+A value GitHub did not return (a failed request, an empty repository, a capped sample) is shown as “—” or “unavailable”, never as zero, and never changes a tone to “inactive”. For example, if the merged-PR sample cannot be loaded, the Overview says the recent activity could not be loaded instead of “no human merges”.

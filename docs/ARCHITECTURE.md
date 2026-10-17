@@ -11,6 +11,7 @@ github.com tab                         extension
 │  • on-device AI (ai.ts)   │  report  │  • reports/*      REST or GraphQL      │
 └──────────────────────────┘           │  • transport.ts   token, queue, limits │
                                        │  • auth.ts        device flow / token  │
+                                       │  • vault.ts       AES-GCM at rest      │
 settings.html ── trusted port ───────▶ │  • watch.ts       hourly alarms        │
                                        └───────────────────▲──────────────────┘
                                                            │ HTTPS
@@ -20,7 +21,9 @@ settings.html ── trusted port ───────▶ │  • watch.ts    
 ## Principles
 
 - **Pages are untrusted.** The content script runs on github.com, so every message is validated (`background/validation.ts`). Credential operations (`connect`, `deviceStart`, …) are only accepted from the extension's own Settings page.
-- **The token never reaches a page.** Extension storage is restricted to trusted contexts; content scripts only receive reports.
+- **The token never reaches a page.** Extension storage is restricted to trusted contexts; content scripts only receive reports. The token is kept in one place: `chrome.storage.session` (memory) by default, or `chrome.storage.local` sealed with AES-GCM when remembered (`background/vault.ts`; the key is a non-extractable Web Crypto key in the extension's IndexedDB). A 401 marks it invalid so Settings can ask the user to reconnect.
+- **Links are https only.** Every link rendered from API data goes through `safeHref()` (`shared/repo.ts`); Preact does not block `javascript:` URLs on its own.
+- **No idle work off repository pages.** The badge re-check timer runs only on repository pages with badges enabled, and skips hidden tabs.
 - **One request is better than thirty.** When signed in, reports use one GraphQL query (`preferGraphql` in `reports/context.ts`) and fall back to REST with a visible note if GraphQL fails.
 - **Same numbers either way.** REST and GraphQL responses are normalized into the same shapes (`Reply`, `Thread`, `Merge`) before any calculation, and all calculations live in `src/core/` as pure functions.
 - **Honest coverage.** Reports carry `warnings`; unavailable data is `null`, never `0`.

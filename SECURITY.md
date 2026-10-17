@@ -18,7 +18,9 @@ If you exposed a GitHub token, revoke it right away at https://github.com/settin
 ## Security model
 
 - Public repositories only; private cross-references are filtered out.
-- The sign-in token is held by the service worker in storage restricted to trusted extension contexts. Scripts on GitHub pages never receive it, and it is only sent to `api.github.com`.
+- The sign-in token is held by the service worker in storage restricted to trusted extension contexts. Scripts on GitHub pages never receive it, and it is only sent to `api.github.com`. It is kept in one place: in memory for the browser session, or, with “Stay signed in”, encrypted at rest with AES-GCM under a non-extractable Web Crypto key.
+- Links rendered from API data must be `https:` URLs; anything else is shown as text.
 - Every message from a GitHub page is validated against an allow-list; credential operations are accepted only from the extension's own Settings page.
 - No remote code, no `eval`, no analytics, no backend. On-device AI output is rendered as plain text and treated as untrusted.
-- Extension storage is not an encrypted vault; “Stay signed in” is opt-in.
+- Encryption at rest protects against casual disclosure (backups, token scanners), not against someone who fully controls your computer and browser profile. “Stay signed in” is opt-in.
+- CI runs CodeQL, `npm audit` for production dependencies, and a package check that rejects remote code, source maps and credential-like strings in the release ZIP.

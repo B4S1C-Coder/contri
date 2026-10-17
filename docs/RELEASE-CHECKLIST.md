@@ -3,13 +3,23 @@
 ## Automated (CI does these on every push)
 
 - [ ] `npm run check` — Prettier, ESLint, unit tests, build
-- [ ] `npm run test:e2e` — installed extension in Chromium against the mock GitHub
-- [ ] `npm run package && npm run verify:package` — permissions, files, size, no dynamic code
+- [ ] `npm run test:e2e` — installed extension in Chromium against the mock GitHub, including axe (WCAG 2.2 A/AA)
+- [ ] `npm run package && npm run verify:package` — permissions, every referenced file, size, no remote or dynamic code, no source maps or credentials
+- [ ] `npm audit --omit=dev` — no known vulnerabilities in shipped dependencies
 - [ ] CodeQL clean
+
+## Before a release (opt-in checks)
+
+- [ ] `CONTRI_CONTRAST=1 npx playwright test contrast` — WCAG AA text contrast over the glass, light and dark
+- [ ] `CONTRI_PERF=1 CONTRI_BASELINE=<previous dist> npx playwright test perf` — no regression in content-script cost
 
 ## Manual, in a real Chrome profile
 
 - [ ] Fresh install opens the welcome page; sign in with GitHub (device flow) and with a token; sign out
+- [ ] “Stay signed in”, restart the browser: still signed in. Without it: signed out after restart
+- [ ] Revoke the token on GitHub: Settings says the sign-in was rejected
+- [ ] Update from the previous version over an existing install: remembered sign-in, shortlist and watched issues survive
+- [ ] Keyboard only: Tab through the panel, Escape minimizes and focus lands on the launcher; zoom 200%
 - [ ] Launcher on repository pages; widget opens, drags, minimizes, resets; toolbar button toggles it
 - [ ] Issue badge on a real issue in light and dark GitHub themes; repository About badge
 - [ ] SPA navigation: repository → issues → issue → back; no duplicate widgets
