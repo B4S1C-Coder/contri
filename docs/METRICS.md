@@ -39,7 +39,7 @@ The verdict picks the first that applies:
 1. **Closed** — the issue is closed.
 2. **Open PR #n** — an open pull request references the issue.
 3. **Assigned** — the issue has assignees.
-4. **Claimed by @x** — a non-team commenter offered to work on it within the last 21 days, or has an open PR.
+4. **Claimed by `@user`** — a non-team commenter offered to work on it within the last 21 days, or has an open PR.
 5. **Claim went quiet** — the latest claim is older than 21 days with no later comment or open PR from that person.
 6. **Partly checked** — references could not be checked completely.
 7. **Looks free** — none of the above.

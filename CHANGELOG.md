@@ -4,7 +4,7 @@
 
 **New**
 
-- Badges inside GitHub: next to issue titles (“Looks free”, “Claimed by @x”, “Claim went quiet”, “Open PR #n”, “Assigned”) and in the repository About box.
+- Badges inside GitHub: next to issue titles (“Looks free”, “Claimed by `@user`”, “Claim went quiet”, “Open PR #n”, “Assigned”) and in the repository About box.
 - Claim detection: finds “I'd like to work on this” comments, respects people who give an issue back, and flags claims with no activity for 21+ days.
 - Linked pull requests now include GitHub's Development panel and closing keywords (signed in).
 - On-device AI with Chrome's built-in Gemini Nano: thread summary and “How do I start?”. Nothing is uploaded.

@@ -3,6 +3,7 @@ name: Release
 # Publishes a GitHub Release with the Chrome and Firefox packages.
 # Runs when main gets a package.json version that has no release yet (the tag is
 # created automatically), when a v* tag is pushed, or manually from the Actions tab.
+# If the release already exists, its notes are re-synced from CHANGELOG.md.
 on:
   push:
     branches: [main]
@@ -33,7 +34,7 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($version)"; exit 1
           fi
           if gh release view "$version" >/dev/null 2>&1; then
-            echo "Release $version already exists; nothing to do."
+            echo "Release $version already exists; notes will be re-synced."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -60,11 +61,7 @@ jobs:
           npm run verify:package
           node scripts/package.mjs --firefox
 
-      - name: Publish GitHub release
-        if: steps.version.outputs.publish == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
+      - name: Write release notes from CHANGELOG.md
         run: |
           awk '/^## /{n++} n==1' CHANGELOG.md > notes.md
           cat >> notes.md <<'EOF'
@@ -74,5 +71,26 @@ jobs:
           2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the unzipped folder.
           3. Open any public GitHub repository. Firefox: use the `-firefox.zip` via `about:debugging` (experimental).
           EOF
+
+      - name: Publish GitHub release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
           gh release create "$TAG" contri-v*.zip contri-v*.zip.sha256 \
             --target "$GITHUB_SHA" --title "contri. $TAG" --notes-file notes.md --latest
+
+      - name: Keep existing release notes in sync
+        if: steps.version.outputs.publish == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          current="$(gh release view "$TAG" --json body -q .body)"
+          if [[ "$current" == "$(cat notes.md)" ]]; then
+            echo "Release notes for $TAG are up to date."
+          else
+            gh release edit "$TAG" --notes-file notes.md
+            echo "Updated release notes for $TAG from CHANGELOG.md."
+          fi

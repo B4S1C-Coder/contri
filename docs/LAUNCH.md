@@ -32,7 +32,7 @@ Also tick **Discussions** and **Sponsorships** (if you have GitHub Sponsors) und
 
 > I built contri. — a free, open-source browser extension for open-source newcomers.
 >
-> Under every GitHub issue it tells you: Looks free · Claimed by @x · Claim went quiet · Open PR #12
+> Under every GitHub issue it tells you: Looks free · Claimed by `@user` · Claim went quiet · Open PR #12
 >
 > Plus: how fast maintainers actually reply, and who they are. No backend, no tracking.
 >
