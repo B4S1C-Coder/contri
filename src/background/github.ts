@@ -98,9 +98,11 @@ export class GitHubClient {
           ? 'Not found on GitHub. It may be private, renamed or deleted.'
           : response.status === 403
             ? 'GitHub denied this request (forbidden).'
-            : response.status === 422
-              ? 'GitHub could not run this search. Try simpler terms.'
-              : `GitHub returned ${response.status}. Try again later.`;
+            : response.status === 409
+              ? 'This repository is empty: it has no commits yet.'
+              : response.status === 422
+                ? 'GitHub could not run this search. Try simpler terms.'
+                : `GitHub returned ${response.status}. Try again later.`;
       throw new GitHubError(message, response.status, reset || undefined);
     }
     return response;

@@ -42,6 +42,21 @@ describe('repository metadata', () => {
 });
 
 describe('overview', () => {
+  it('explains an empty repository instead of suggesting a retry', async () => {
+    const { fetcher } = fakeGitHub([
+      repoRoute,
+      (u) => (u.pathname === `${REPO}/pulls` ? json([]) : undefined),
+      (u) => (u.pathname === `${REPO}/commits` ? json({ message: 'Git Repository is empty.' }, 409) : undefined),
+      (u) => (u.pathname === '/search/issues' ? json({ total_count: 0, incomplete_results: false }) : undefined),
+      (u) => (u.pathname === `${REPO}/releases/latest` ? json({ message: 'Not Found' }, 404) : undefined),
+    ]);
+    setTransport(fetcher);
+    const report = await overview(createCtx(false), 'acme/widgets');
+    expect(report.commits.count).toBeNull();
+    expect(report.warnings.join(' ')).toMatch(/repository is empty/);
+    expect(report.warnings.join(' ')).not.toMatch(/Try again later/);
+  });
+
   it('anonymous: uses an exact merged count from search and samples the chart from REST', async () => {
     const { fetcher, calls } = fakeGitHub([
       repoRoute,
