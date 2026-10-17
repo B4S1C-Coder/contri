@@ -7,6 +7,8 @@ import { useRequest } from './hooks';
 import { ArrowIcon } from './icons';
 
 function Responses({ data, kind }: { data: TeamReport; kind: 'pr' | 'issue' }) {
+  // Waiting time is measured at the moment the evidence was checked, so renders stay pure.
+  const checked = Date.parse(data.checkedAt);
   const s = data.summary[kind];
   const items = data.groups[kind];
   return (
@@ -40,7 +42,7 @@ function Responses({ data, kind }: { data: TeamReport; kind: 'pr' | 'issue' }) {
                 {item.partial
                   ? 'long discussion; timing unknown'
                   : item.hours === null
-                    ? `no team reply yet · waiting ${hours((Date.now() - Date.parse(item.createdAt)) / 3_600_000)}`
+                    ? `no team reply yet · waiting ${hours((checked - Date.parse(item.createdAt)) / 3_600_000)}`
                     : `first team reply in ${hours(item.hours)}${item.response ? ` by @${item.response.login}` : ''}`}
               </small>
             </div>

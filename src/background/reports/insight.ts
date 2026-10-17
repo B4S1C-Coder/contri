@@ -137,7 +137,7 @@ async function viaRest(ctx: Ctx, repo: string, number: number, roster?: Roster):
   const warnings: string[] = [];
   const issue = await ctx.client.rest<RestIssue>(`${base}/issues/${number}`);
   if (issue.pull_request) throw new Error('This number is a pull request, not an issue.');
-  let complete = true;
+  let complete: boolean;
   const prs = new Map<string, LinkedPR>();
   try {
     const timeline = await ctx.client.restAll<RestTimeline>(`${base}/issues/${number}/timeline`);

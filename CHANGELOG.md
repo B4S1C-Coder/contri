@@ -29,10 +29,16 @@
 - Navigation detection uses Turbo and Navigation API events instead of watching the whole page.
 - Requests run two at a time; back-off survives worker restarts.
 
+**Brand**
+
+- The contri. symbol (arrow in a circle) and wordmark across the toolbar icon, launcher, widget, badges and settings; website link in the extension details and Settings.
+
 **Project**
 
 - Code split into `core`, `background`, `content`, `settings` with ESLint and Prettier.
 - 65 unit tests and 8 installed-extension end-to-end tests in Chromium against a mock GitHub, run in CI.
+- CI, CodeQL, Dependabot and a tag-driven release workflow; README link checking.
+- Up to date: Preact 11, ESLint 10 (React hooks rules v7), Playwright 1.64, TypeScript types and GitHub Actions v7.
 
 ## 0.2.0 — release candidate
 

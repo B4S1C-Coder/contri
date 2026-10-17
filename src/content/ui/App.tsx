@@ -33,20 +33,24 @@ const MAIN_TABS: Array<[Tab, string]> = [
 
 export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove }: AppProps) {
   const [following, setFollowing] = useState(true);
-  const [repo, setRepo] = useState(page.repo ?? '');
+  const [chosen, setChosen] = useState('');
   const [tab, setTab] = useState<Tab>(page.issue ? 'issues' : page.repo ? 'overview' : 'discover');
   const [manual, setManual] = useState('');
   const [notice, setNotice] = useState('');
   const [tick, setTick] = useState(0);
 
-  // Follow the GitHub tab as the user navigates.
-  useEffect(() => {
-    if (!following || !page.repo) return;
-    setRepo(page.repo);
-    setTab((current) =>
-      page.issue ? 'issues' : current === 'issues' || current === 'discover' ? 'overview' : current,
-    );
-  }, [page.repo, page.issue, following]);
+  // Follow the GitHub tab as the user navigates: the repository is derived, and the tab
+  // is adjusted once per navigation (React's "adjust state when a prop changes" pattern).
+  const repo = following && page.repo ? page.repo : chosen || page.repo || '';
+  const pageKey = `${page.repo}#${page.issue}`;
+  const [seenPage, setSeenPage] = useState(pageKey);
+  if (seenPage !== pageKey) {
+    setSeenPage(pageKey);
+    if (following && page.repo)
+      setTab((current) =>
+        page.issue ? 'issues' : current === 'issues' || current === 'discover' ? 'overview' : current,
+      );
+  }
 
   // Refresh the connection badge when the user comes back from Settings.
   useEffect(() => {
@@ -67,7 +71,7 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
     if (!parsed) return setNotice('Enter owner/repository or a GitHub repository URL.');
     setNotice('');
     setFollowing(false);
-    setRepo(parsed);
+    setChosen(parsed);
     setTab('overview');
   };
   const openSettings = () => void call('settings', {}).catch((e: Error) => setNotice(e.message));
@@ -114,7 +118,13 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
       <div className="cc-context">
         <span title={repo}>{repo || 'Explore public GitHub'}</span>
         {page.repo && (
-          <button onClick={() => setFollowing(!following)} aria-pressed={following}>
+          <button
+            onClick={() => {
+              if (following) setChosen(repo);
+              setFollowing(!following);
+            }}
+            aria-pressed={following}
+          >
             {following ? 'Following tab' : 'Follow tab'}
           </button>
         )}

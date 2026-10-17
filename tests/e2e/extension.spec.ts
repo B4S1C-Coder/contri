@@ -22,7 +22,8 @@ const test = base.extend<Fixtures>({
   context: async ({ mock }, use) => {
     void mock;
     const context = await chromium.launchPersistentContext('', {
-      channel: 'chromium',
+      // CONTRI_CHROMIUM lets you run against an existing Chromium build instead of Playwright's download.
+      ...(process.env.CONTRI_CHROMIUM ? { executablePath: process.env.CONTRI_CHROMIUM } : { channel: 'chromium' }),
       headless: true,
       ignoreHTTPSErrors: true,
       args: [

@@ -17,7 +17,7 @@ test('README screenshots and social card', async () => {
   test.setTimeout(90_000);
   const mock = startMockGitHub(8443);
   const context = await chromium.launchPersistentContext('', {
-    channel: 'chromium',
+    ...(process.env.CONTRI_CHROMIUM ? { executablePath: process.env.CONTRI_CHROMIUM } : { channel: 'chromium' }),
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,

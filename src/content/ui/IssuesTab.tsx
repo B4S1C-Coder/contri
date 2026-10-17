@@ -104,10 +104,11 @@ export function IssuesTab({
   const [error, setError] = useState('');
   const controller = useRef(new AbortController());
 
+  // The tab remounts when the repository changes, so only in-flight checks need cancelling.
   useEffect(() => {
-    controller.current = new AbortController();
-    setReports({});
-    return () => controller.current.abort();
+    const current = new AbortController();
+    controller.current = current;
+    return () => current.abort();
   }, [repo]);
 
   const check = async (n: number) => {

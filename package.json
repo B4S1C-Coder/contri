@@ -2,7 +2,7 @@
   "name": "contri",
   "private": true,
   "version": "0.3.0",
-  "description": "Find open-source issues you can actually take \u2014 see if a repo is alive, if maintainers reply, and if an issue is already claimed. Right on GitHub.",
+  "description": "Find open-source issues you can actually take — see if a repo is alive, if maintainers reply, and if an issue is already claimed. Right on GitHub.",
   "keywords": [
     "open-source",
     "hacktoberfest",
@@ -45,22 +45,22 @@
     "check:docs": "node scripts/check-links.mjs"
   },
   "dependencies": {
-    "preact": "^10.29.8"
+    "preact": "^11.0.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
-    "@playwright/test": "^1.56.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
     "@resvg/resvg-js": "^2.6.2",
-    "@types/chrome": "^0.0.308",
-    "@types/node": "^24.19.2",
+    "@types/chrome": "^0.3.5",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "fflate": "^0.8.3",
-    "globals": "^15.15.0",
+    "globals": "^17.13.0",
     "prettier": "^3.9.10",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.71.2",
     "vite": "^7.1.0",

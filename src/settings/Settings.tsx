@@ -182,11 +182,13 @@ function Preferences() {
   );
 }
 
+/** Opened from the install flow (settings.html?welcome=1). */
+const WELCOME = new URLSearchParams(location.search).has('welcome');
+
 function Settings() {
   const [status, setStatus] = useState<ConnectionInfo | null>(null);
   const [remember, setRemember] = useState(false);
   const [message, setMessage] = useState('');
-  const welcome = useRef(new URLSearchParams(location.search).has('welcome'));
 
   useEffect(() => {
     void call('connection', {})
@@ -204,9 +206,7 @@ function Settings() {
           contri-two.vercel.app ↗
         </a>
       </header>
-      <h1>
-        {status?.connected ? 'You’re connected.' : welcome.current ? 'Welcome to CONTRI.' : 'A clearer connection.'}
-      </h1>
+      <h1>{status?.connected ? 'You’re connected.' : WELCOME ? 'Welcome to CONTRI.' : 'A clearer connection.'}</h1>
       <p>
         CONTRI reads public GitHub evidence to show whether a project is active, whether the team replies, and whether
         an issue is already taken. Signing in raises GitHub&apos;s limit from 60 to 5,000 requests per hour and unlocks

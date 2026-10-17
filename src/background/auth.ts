@@ -31,8 +31,9 @@ export function initializeAuth() {
     // Firefox has no setAccessLevel; Chrome uses it to hide storage from content scripts.
     await chrome.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
     await chrome.storage.session.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
-    const session = await chrome.storage.session.get([KEY, META]);
-    const local = await chrome.storage.local.get([KEY, META]);
+    type Stored = { [KEY]?: string; [META]?: Meta };
+    const session = (await chrome.storage.session.get([KEY, META])) as Stored;
+    const local = (await chrome.storage.local.get([KEY, META])) as Stored;
     credential = session[KEY] || local[KEY] || undefined;
     remembered = Boolean(local[KEY]);
     meta = (session[META] || local[META] || {}) as Meta;
