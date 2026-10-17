@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in CONTRI is wrong or broken.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **never paste a GitHub token** or personal data in an issue or screenshot.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the repository or issue URL you were on, if public.
+      placeholder: |
+        1. Open https://github.com/owner/repo/issues/123
+        2. Click the CONTRI badge
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Issue badge / availability check
+        - Repository badge
+        - Overview
+        - Team responses
+        - Issues list
+        - Discover
+        - Saved & watched / notifications
+        - On-device AI
+        - Sign-in / settings
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Signed in?
+      options: [Anonymous, Signed in with GitHub, Personal access token]
+  - type: input
+    id: versions
+    attributes:
+      label: Browser and CONTRI version
+      placeholder: Chrome 141, CONTRI 0.3.0
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or console errors
+      description: From the GitHub tab or chrome://extensions → CONTRI → service worker. Remove anything personal.

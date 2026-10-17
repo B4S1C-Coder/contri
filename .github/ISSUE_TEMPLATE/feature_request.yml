@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an idea that would help contributors or maintainers.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who is it for (first-time contributor, maintainer, …) and what is hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like CONTRI to do?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: What GitHub data would it use?
+      description: CONTRI only shows public evidence it can link to. Rough request cost helps too.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to work on this myself
