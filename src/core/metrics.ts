@@ -1,81 +1,154 @@
-export type Actor = { login: string; type?: string } | null;
-export type Pull = {
-  number: number; title: string; html_url: string; created_at: string; updated_at: string;
-  merged_at: string | null; user: Actor; author_association?: string; draft?: boolean;
-};
+/**
+ * Pure evidence calculations. Everything here works on normalized data so the
+ * REST (anonymous) and GraphQL (signed-in) paths produce identical numbers.
+ */
+
+export const DAY = 86_400_000;
+export const WINDOW_DAYS = 90;
+
+export type Actor = { login: string; bot: boolean } | null;
+
 export type Reply = {
-  user: Actor; author_association?: string; created_at?: string; submitted_at?: string;
-};
-export type Issue = {
-  number: number; title: string; html_url: string; created_at: string; updated_at: string;
-  labels: Array<{ name: string }>; assignee: Actor; comments: number; locked?: boolean;
-  pull_request?: unknown;
+  author: Actor;
+  association: string;
+  at: string;
+  url: string;
+  kind: 'comment' | 'review';
+  body?: string;
 };
 
-const TEAM = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
-const OUTSIDE = new Set(['NONE', 'FIRST_TIMER', 'FIRST_TIME_CONTRIBUTOR', 'CONTRIBUTOR']);
-export const isBot = (actor: Actor | undefined): boolean => !actor || actor.type === 'Bot' || /\[bot\]$/i.test(actor.login);
-export const isTeam = (association?: string): boolean => TEAM.has(association || '');
-export const isOutside = (pull: Pull): boolean => !pull.draft && !isBot(pull.user) && OUTSIDE.has(pull.author_association || '');
+export type Thread = {
+  kind: 'pr' | 'issue';
+  number: number;
+  title: string;
+  url: string;
+  createdAt: string;
+  author: Actor;
+  association: string;
+  replies: Reply[];
+  /** True when every reply was loaded (no pagination cap was hit). */
+  complete: boolean;
+};
 
-/** Adapted from the user-supplied maintainerPulse parser. */
-export function parseRepo(input: string): string | null {
-  let value = input.trim().replace(/\/+$/, '');
-  if (/^https?:\/\//i.test(value)) {
-    try {
-      const url = new URL(value);
-      if (!['github.com', 'www.github.com'].includes(url.hostname.toLowerCase())) return null;
-      value = url.pathname.replace(/^\/+/, '');
-    } catch { return null; }
-  } else value = value.replace(/^github\.com\//i, '');
-  const [owner, rawRepo] = value.split('/');
-  const repo = rawRepo?.replace(/\.git$/i, '');
-  if (!owner || !repo || !/^[a-z\d][a-z\d-]{0,38}$/i.test(owner) || !/^[a-z\d_.-]{1,100}$/i.test(repo) || ['.', '..'].includes(repo)) return null;
-  if (new Set(['settings','notifications','features','topics','marketplace','search','orgs','collections','sponsors','login','signup','explore','about','pricing','pulls','issues','account','users','organizations','apps','codespaces','new']).has(owner.toLowerCase())) return null;
-  return `${owner}/${repo}`;
+export type Merge = { mergedAt: string; createdAt: string; author: Actor; url: string; mergedBy?: string | null };
+
+export type Event = { at: string; url: string; kind: string; login: string; association?: string };
+
+const TEAM_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+const OUTSIDE_ASSOCIATIONS = new Set(['NONE', 'FIRST_TIMER', 'FIRST_TIME_CONTRIBUTOR', 'CONTRIBUTOR']);
+
+/** Normalizes a REST `user` object or a GraphQL `author` object. */
+export function actor(value: { login?: string; type?: string; __typename?: string } | null | undefined): Actor {
+  if (!value?.login) return null;
+  const bot = value.type === 'Bot' || value.__typename === 'Bot' || /\[bot\]$/i.test(value.login);
+  return { login: value.login, bot };
 }
 
-export function activity(pulls: Pull[], commits: Array<{ author?: Actor; commit: { author?: { date?: string } } }>, now: Date) {
-  const start = new Date(now.getTime() - 90 * 86400000);
-  const merged = pulls.filter(p => p.merged_at && new Date(p.merged_at) >= start && new Date(p.merged_at) <= now && !isBot(p.user));
-  const authors = new Set(merged.map(p => p.user!.login.toLowerCase()));
-  const humanCommits = commits.filter(c => !isBot(c.author) && c.commit.author?.date && new Date(c.commit.author.date) >= start && new Date(c.commit.author.date) <= now);
-  const weeks = Array.from({ length: 13 }, (_, i) => {
-    const from = new Date(start.getTime() + i * 7 * 86400000);
-    const to = new Date(i === 12 ? now.getTime() + 1 : from.getTime() + 7 * 86400000);
-    return { from: from.toISOString(), count: merged.filter(p => {
-      const at = new Date(p.merged_at!);
-      return at >= from && at < to;
-    }).length };
+export const isHuman = (who: Actor): who is { login: string; bot: false } => Boolean(who && !who.bot);
+export const isTeamAssociation = (association?: string | null) => TEAM_ASSOCIATIONS.has(association ?? '');
+export const isOutsideAssociation = (association?: string | null) => OUTSIDE_ASSOCIATIONS.has(association ?? '');
+
+export const since = (now = Date.now(), days = WINDOW_DAYS) => new Date(now - days * DAY).toISOString();
+
+export type Week = { from: string; count: number };
+
+export function activity(merges: Merge[], now: Date) {
+  const start = now.getTime() - WINDOW_DAYS * DAY;
+  const human = merges.filter((m) => {
+    const at = Date.parse(m.mergedAt);
+    return isHuman(m.author) && at >= start && at <= now.getTime();
   });
-  return { merged: merged.length, authors: authors.size, commits: humanCommits.length, weeks, from: start.toISOString() };
+  const authors = new Set(human.map((m) => m.author!.login.toLowerCase()));
+  const weeks: Week[] = Array.from({ length: 13 }, (_, i) => {
+    const from = start + i * 7 * DAY;
+    const to = i === 12 ? now.getTime() + 1 : from + 7 * DAY;
+    return {
+      from: new Date(from).toISOString(),
+      count: human.filter((m) => {
+        const at = Date.parse(m.mergedAt);
+        return at >= from && at < to;
+      }).length,
+    };
+  });
+  return { merged: human.length, authors: authors.size, weeks, from: new Date(start).toISOString() };
 }
 
-export function firstTeamReply(pull: Pull, replies: Reply[]): number | null {
-  const author = pull.user?.login.toLowerCase();
-  const first = replies
-    .filter(r => r.user && !isBot(r.user) && r.user.login.toLowerCase() !== author && isTeam(r.author_association))
-    .map(r => new Date(r.created_at || r.submitted_at || '').getTime())
-    .filter(time => Number.isFinite(time) && time >= new Date(pull.created_at).getTime())
-    .sort((a, b) => a - b)[0];
-  return first === undefined ? null : (first - new Date(pull.created_at).getTime()) / 3600000;
+export type Timing = {
+  sampled: number;
+  answered: number;
+  unanswered: number;
+  averageHours: number | null;
+  medianHours: number | null;
+  sufficient: boolean;
+};
+
+/** Unanswered items are reported separately and never pull an average down or up. */
+export function timing(values: Array<number | null>): Timing {
+  const answered = values.filter((x): x is number => x !== null && Number.isFinite(x)).sort((a, b) => a - b);
+  const n = answered.length;
+  return {
+    sampled: values.length,
+    answered: n,
+    unanswered: values.length - n,
+    averageHours: n ? answered.reduce((a, b) => a + b, 0) / n : null,
+    medianHours: n ? (answered[Math.floor((n - 1) / 2)] + answered[Math.floor(n / 2)]) / 2 : null,
+    sufficient: n >= 3,
+  };
 }
 
-export function responseSummary(samples: Array<{ pull: Pull; hours: number | null }>) {
-  const responded = samples.map(s => s.hours).filter((h): h is number => h !== null).sort((a, b) => a - b);
-  const middle = Math.floor(responded.length / 2);
-  const medianHours = responded.length ? (responded.length % 2 ? responded[middle] : (responded[middle - 1] + responded[middle]) / 2) : null;
-  return { sampled: samples.length, replied: responded.length, medianHours, sufficient: samples.length >= 3 };
+export type TeamCheck = (login: string, association: string) => boolean;
+
+/**
+ * Hours from creation until the first human reply by the project team (never the
+ * author, never a bot). `reply` is undefined when no qualifying reply was observed.
+ */
+export function firstTeamReply(thread: Thread, isTeam: TeamCheck): { hours: number | null; reply?: Reply } {
+  const created = Date.parse(thread.createdAt);
+  const author = thread.author?.login.toLowerCase();
+  const first = thread.replies
+    .filter((r) => {
+      const at = Date.parse(r.at);
+      return (
+        isHuman(r.author) &&
+        r.author.login.toLowerCase() !== author &&
+        Number.isFinite(at) &&
+        at >= created &&
+        at <= Date.now() &&
+        isTeam(r.author.login, r.association)
+      );
+    })
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0];
+  return first ? { hours: (Date.parse(first.at) - created) / 3_600_000, reply: first } : { hours: null };
 }
 
-export function opportunities(issues: Issue[]) {
-  const names = new Set(['good first issue', 'help wanted']);
-  return issues.filter(i => !i.pull_request && !i.locked && i.labels.some(l => names.has(l.name.toLowerCase())));
+export type LinkState = 'open' | 'clear' | 'incomplete';
+
+export function linkState(prs: Array<{ state: string }>, complete: boolean): LinkState {
+  if (prs.some((p) => p.state.toLowerCase() === 'open')) return 'open';
+  return complete ? 'clear' : 'incomplete';
 }
 
-export function compareActivity(a: ReturnType<typeof activity>, b: ReturnType<typeof activity>): number {
-  return b.merged - a.merged || b.authors - a.authors || b.commits - a.commits;
+export function hasNextIssuePage(rawCount: number, total: number, page: number, perPage = 30) {
+  return page < 10 && rawCount === perPage && page * perPage < total;
 }
 
-export function hasNextIssuePage(rawCount:number,total:number,page:number){return page<10&&rawCount===30&&page*30<total;}
-export function needsLinkCheck(check:{state:string}|undefined){return !check||check.state==='incomplete';}
+export const needsLinkCheck = (check: { state: string } | undefined) => !check || check.state === 'incomplete';
+
+export function discussionSummary(replies: Reply[], complete: boolean, isTeam: TeamCheck) {
+  const human = replies
+    .filter((r) => isHuman(r.author) && Date.parse(r.at) <= Date.now())
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  const last = human[0];
+  return {
+    complete,
+    inspected: replies.length,
+    teamComments: human.filter((r) => isTeam(r.author!.login, r.association)).length,
+    latest: last ? { at: last.at, url: last.url, login: last.author!.login, kind: 'comment' } : null,
+  };
+}
+
+/** Ranks repositories for discovery: recent human merges first, then open beginner issues. */
+export function discoveryScore(row: { merges90: number; goodFirstIssues: number; archived?: boolean }) {
+  if (row.archived) return -1;
+  return Math.min(row.merges90, 60) * 2 + Math.min(row.goodFirstIssues, 30);
+}

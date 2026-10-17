@@ -1,0 +1,186 @@
+import { describe, expect, it } from 'vitest';
+import { parsePage, parseRepo } from '../../src/shared/repo';
+import {
+  activity,
+  actor,
+  discoveryScore,
+  firstTeamReply,
+  hasNextIssuePage,
+  linkState,
+  needsLinkCheck,
+  timing,
+  type Reply,
+  type Thread,
+} from '../../src/core/metrics';
+import { buildRoster, parseCodeowners, rosterFromEvents, teamCheck } from '../../src/core/team';
+import { isFresh, isPartial, ttlFor } from '../../src/core/cache-policy';
+import { DAY, isoAgo } from './helpers';
+
+describe('repository parsing', () => {
+  it('accepts names and GitHub URLs, rejects GitHub product pages', () => {
+    expect(parseRepo('pallets/flask')).toBe('pallets/flask');
+    expect(parseRepo('https://github.com/pallets/flask/issues/12')).toBe('pallets/flask');
+    expect(parseRepo('github.com/pallets/flask.git')).toBe('pallets/flask');
+    expect(parseRepo('https://gitlab.com/a/b')).toBeNull();
+    expect(parseRepo('settings/profile')).toBeNull();
+    expect(parseRepo('orgs/acme')).toBeNull();
+    expect(parseRepo('a/..')).toBeNull();
+  });
+  it('describes repository, issue and pull request pages', () => {
+    expect(parsePage('https://github.com/a/b/issues/42')).toEqual({ repo: 'a/b', issue: 42, pull: null });
+    expect(parsePage('https://github.com/a/b/pull/7/files')).toEqual({ repo: 'a/b', issue: null, pull: 7 });
+    expect(parsePage('https://github.com/a/b')).toEqual({ repo: 'a/b', issue: null, pull: null });
+    expect(parsePage('https://github.com/a/b/issues/new').issue).toBeNull();
+    expect(parsePage('https://github.com/notifications').repo).toBeNull();
+  });
+});
+
+describe('activity and timing', () => {
+  const now = new Date('2026-10-15T12:00:00Z');
+  const merge = (days: number, login = 'dev', bot = false) => ({
+    mergedAt: isoAgo(days, now.getTime()),
+    createdAt: isoAgo(days + 2, now.getTime()),
+    author: { login, bot },
+    url: 'https://github.com/a/b/pull/1',
+  });
+  it('counts recent human merges and distinct authors only', () => {
+    const result = activity([merge(1), merge(2, 'Dev'), merge(3, 'dependabot', true), merge(200)], now);
+    expect(result.merged).toBe(2);
+    expect(result.authors).toBe(1);
+    expect(result.weeks.reduce((n, w) => n + w.count, 0)).toBe(2);
+    expect(result.weeks).toHaveLength(13);
+  });
+  it('keeps unanswered items out of averages and needs three answers', () => {
+    expect(timing([1, 2, 99, null])).toEqual({
+      sampled: 4,
+      answered: 3,
+      unanswered: 1,
+      averageHours: 34,
+      medianHours: 2,
+      sufficient: true,
+    });
+    expect(timing([1, null]).sufficient).toBe(false);
+  });
+  it('recognizes bots from REST and GraphQL shapes', () => {
+    expect(actor({ login: 'dependabot[bot]', type: 'Bot' })?.bot).toBe(true);
+    expect(actor({ login: 'renovate', __typename: 'Bot' })?.bot).toBe(true);
+    expect(actor({ login: 'octocat', __typename: 'User' })?.bot).toBe(false);
+    expect(actor(null)).toBeNull();
+  });
+});
+
+describe('first team reply', () => {
+  const created = isoAgo(10);
+  const reply = (login: string, association: string, hoursAfter: number, kind: Reply['kind'] = 'comment'): Reply => ({
+    author: { login, bot: login.endsWith('[bot]') },
+    association,
+    at: new Date(Date.parse(created) + hoursAfter * 3_600_000).toISOString(),
+    url: `https://github.com/a/b/issues/1#${login}`,
+    kind,
+  });
+  const thread = (replies: Reply[]): Thread => ({
+    kind: 'pr',
+    number: 1,
+    title: 't',
+    url: 'u',
+    createdAt: created,
+    author: { login: 'newbie', bot: false },
+    association: 'FIRST_TIME_CONTRIBUTOR',
+    replies,
+    complete: true,
+  });
+  it('ignores the author, bots and outside commenters', () => {
+    const roster = buildRoster({});
+    const result = firstTeamReply(
+      thread([
+        reply('newbie', 'NONE', 1),
+        reply('ci[bot]', 'MEMBER', 2),
+        reply('random', 'NONE', 3),
+        reply('maint', 'MEMBER', 5, 'review'),
+      ]),
+      teamCheck(roster),
+    );
+    expect(result.hours).toBe(5);
+    expect(result.reply?.author?.login).toBe('maint');
+  });
+  it('counts private org members found through triage events (shown as CONTRIBUTOR)', () => {
+    const roster = buildRoster({
+      events: [{ event: 'labeled', actor: { login: 'hidden-member', bot: false }, at: isoAgo(3) }],
+    });
+    const result = firstTeamReply(thread([reply('hidden-member', 'CONTRIBUTOR', 4)]), teamCheck(roster));
+    expect(result.hours).toBe(4);
+  });
+});
+
+describe('maintainer roster', () => {
+  it('uses privileged events but skips labels applied by issue forms at creation', () => {
+    const created = isoAgo(5);
+    const found = rosterFromEvents([
+      {
+        event: 'labeled',
+        actor: { login: 'author', bot: false },
+        at: created,
+        issueAuthor: 'author',
+        issueCreatedAt: created,
+      },
+      { event: 'assigned', actor: { login: 'triager', bot: false }, at: isoAgo(4) },
+      { event: 'merged', actor: { login: 'merger', bot: false }, at: isoAgo(4) },
+      { event: 'commented', actor: { login: 'someone', bot: false }, at: isoAgo(4) },
+      { event: 'labeled', actor: { login: 'github-actions[bot]', bot: true }, at: isoAgo(4) },
+    ]);
+    expect(found).toEqual([
+      { login: 'triager', basis: 'triage' },
+      { login: 'merger', basis: 'merged' },
+    ]);
+  });
+  it('parses CODEOWNERS users and skips teams and comments', () => {
+    const text = '# owners\n*.ts @alice @acme/core\n/docs/ @Bob # docs lead\n\n* bad@example.com';
+    expect(parseCodeowners(text)).toEqual(['alice', 'Bob']);
+  });
+  it('treats a user-owned repository owner as team but not an organization', () => {
+    expect(buildRoster({ owner: { login: 'solo', type: 'User' } }).has('solo')).toBe(true);
+    expect(buildRoster({ owner: { login: 'acme', type: 'Organization' } }).has('acme')).toBe(false);
+  });
+  it('merges bases for the same person case-insensitively', () => {
+    const roster = buildRoster({
+      codeowners: ['Alice'],
+      mergedBy: ['alice'],
+      associations: [{ login: 'ALICE', association: 'MEMBER' }],
+    });
+    expect(roster.get('alice')?.basis).toEqual(['codeowners', 'merged', 'association']);
+  });
+});
+
+describe('link checks and paging', () => {
+  it('never reports an incomplete check as clear', () => {
+    expect(linkState([], false)).toBe('incomplete');
+    expect(linkState([{ state: 'closed' }], true)).toBe('clear');
+    expect(linkState([{ state: 'OPEN' }], false)).toBe('open');
+    expect(needsLinkCheck(undefined)).toBe(true);
+    expect(needsLinkCheck({ state: 'incomplete' })).toBe(true);
+    expect(needsLinkCheck({ state: 'clear' })).toBe(false);
+  });
+  it('keeps paging when a full page contained filtered rows', () => {
+    expect(hasNextIssuePage(30, 31, 1)).toBe(true);
+    expect(hasNextIssuePage(0, 0, 1)).toBe(false);
+    expect(hasNextIssuePage(30, 900, 10)).toBe(false);
+  });
+  it('ranks discovery by merges then beginner issues, archived last', () => {
+    expect(discoveryScore({ merges90: 10, goodFirstIssues: 5 })).toBeGreaterThan(
+      discoveryScore({ merges90: 2, goodFirstIssues: 10 }),
+    );
+    expect(discoveryScore({ merges90: 99, goodFirstIssues: 99, archived: true })).toBe(-1);
+  });
+});
+
+describe('cache policy', () => {
+  it('caches partial reports for a shorter time instead of never', () => {
+    expect(ttlFor('team', true)).toBe(ttlFor('team', false) / 3);
+    expect(isPartial({ warnings: ['limited'] })).toBe(true);
+    expect(isPartial({ state: 'incomplete' })).toBe(true);
+    expect(isPartial({ warnings: [] })).toBe(false);
+    expect(isFresh({ at: Date.now() - 1000, ttl: 5000 })).toBe(true);
+    expect(isFresh({ at: Date.now() - DAY, ttl: 5000 })).toBe(false);
+    expect(isFresh(undefined)).toBe(false);
+  });
+});
