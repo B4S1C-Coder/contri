@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installChrome, json } from './helpers';
 import { validateMessage } from '../../src/background/validation';
@@ -137,12 +138,39 @@ describe('sign-in', () => {
     const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
     await auth.connect('github_pat_session', false);
     await auth.connect('github_pat_remembered', true);
-    expect(chrome.storage.local.dump().githubCredential).toBe('github_pat_remembered');
+    // Remembered credentials are stored encrypted, never in plain text.
+    expect(chrome.storage.local.dump().githubCredential).toMatchObject({ v: 1 });
+    expect(JSON.stringify(chrome.storage.local.dump())).not.toContain('github_pat_remembered');
+    expect(await auth.getToken()).toBe('github_pat_remembered');
     expect(chrome.storage.session.dump().githubCredential).toBeUndefined();
     await auth.connect('github_pat_session2', false);
     expect(chrome.storage.session.dump().githubCredential).toBe('github_pat_session2');
     expect(chrome.storage.local.dump().githubCredential).toBeUndefined();
     expect(await auth.connection()).toMatchObject({ remembered: false, connected: true });
+  });
+
+  it('a remembered sign-in survives a worker restart and decrypts', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const first = await import('../../src/background/auth');
+    await first.connect('github_pat_keep', true);
+    vi.resetModules(); // a new service worker: in-memory state is gone, storage and IndexedDB remain
+    const restarted = await import('../../src/background/auth');
+    expect(await restarted.getToken()).toBe('github_pat_keep');
+    expect(await restarted.connection()).toMatchObject({ remembered: true, login: 'safal' });
+  });
+
+  it('signs out cleanly when the encrypted credential cannot be decrypted', async () => {
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    await chrome.storage.local.set({
+      githubCredential: { v: 1, iv: 'AAAAAAAAAAAAAAAA', data: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==' },
+      githubCredentialMeta: { login: 'safal', method: 'token' },
+    });
+    const auth = await import('../../src/background/auth');
+    expect(await auth.connection()).toMatchObject({ connected: false, remembered: false });
+    expect(chrome.storage.local.dump().githubCredential).toBeUndefined();
   });
 
   it('removes the duplicate session copy left by 0.3.0 and survives a restart', async () => {
@@ -154,6 +182,9 @@ describe('sign-in', () => {
     expect(await auth.connection()).toMatchObject({ connected: true, remembered: true, login: 'safal' });
     expect(chrome.storage.session.dump().githubCredential).toBeUndefined();
     expect(await auth.getToken()).toBe('tok');
+    // The 0.3.0 plain-text copy is replaced by an encrypted one.
+    expect(chrome.storage.local.dump().githubCredential).toMatchObject({ v: 1 });
+    expect(JSON.stringify(chrome.storage.local.dump())).not.toContain('"tok"');
   });
 
   it('flags a credential GitHub rejects so Settings can ask to reconnect', async () => {

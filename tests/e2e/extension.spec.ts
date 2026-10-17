@@ -125,3 +125,24 @@ test('a failed request can be retried in place', async ({ context, extensionId, 
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.locator('.cc-widget h2')).toHaveText('widgets');
 });
+
+test('a remembered sign-in is stored encrypted and still works', async ({ context, extensionId, mock }) => {
+  const settings = await context.newPage();
+  await settings.goto(`chrome-extension://${extensionId}/settings.html`);
+  await settings.getByLabel('Stay signed in on this device').check();
+  await settings.locator('#token').fill('github_pat_remembered_e2e');
+  await settings.getByRole('button', { name: 'Connect token' }).click();
+  await expect(settings.getByText(/remembered on this device/)).toBeVisible();
+  const worker = context.serviceWorkers()[0];
+  const stored = await worker.evaluate(async () => ({
+    local: await chrome.storage.local.get(null),
+    session: await chrome.storage.session.get(null),
+  }));
+  expect(JSON.stringify(stored)).not.toContain('github_pat_remembered_e2e');
+  expect(stored.local.githubCredential).toMatchObject({ v: 1 });
+  expect(stored.session.githubCredential).toBeUndefined();
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets/issues/7');
+  await expect(page.locator('#contri-issue-badge button')).toContainText('Open PR #12');
+  expect(mock.requests.some((r) => r.includes('POST /graphql'))).toBe(true);
+});

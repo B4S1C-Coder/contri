@@ -236,8 +236,8 @@ function Settings() {
             Stay signed in on this device
           </label>
           <p className="cc-small">
-            By default the sign-in is forgotten when the browser closes. Remembering uses extension storage that GitHub
-            pages cannot read; it is not an encrypted password vault.
+            By default the sign-in is kept in memory and forgotten when the browser closes. Remembering stores it
+            encrypted (AES-GCM) in extension storage that GitHub pages cannot read.
           </p>
           {status?.oauthAvailable ? (
             <>

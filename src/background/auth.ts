@@ -1,10 +1,12 @@
 import { GITHUB_CLIENT_ID } from '../shared/config';
+import { isSealed, seal, unseal, type Sealed } from './vault';
 
 /**
  * Credential handling. The token lives only in extension storage restricted to
  * trusted contexts (never content scripts), and is only ever sent to GitHub.
- * It is kept in exactly one place: session storage by default (forgotten when the
- * browser closes), or local storage when the user chooses to stay signed in.
+ * It is kept in exactly one place: session storage by default (in memory, forgotten
+ * when the browser closes), or local storage, encrypted with AES-GCM (see vault.ts),
+ * when the user chooses to stay signed in.
  */
 
 const KEY = 'githubCredential';
@@ -34,17 +36,27 @@ export function initializeAuth() {
     // Firefox has no setAccessLevel; Chrome uses it to hide storage from content scripts.
     await chrome.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
     await chrome.storage.session.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' });
-    type Stored = { [KEY]?: string; [META]?: Meta };
+    type Stored = { [KEY]?: string | Sealed; [META]?: Meta };
     const session = (await chrome.storage.session.get([KEY, META])) as Stored;
     const local = (await chrome.storage.local.get([KEY, META])) as Stored;
-    if (local[KEY]) {
-      credential = local[KEY];
-      remembered = true;
-      meta = local[META] ?? {};
+    const saved = local[KEY];
+    if (saved) {
+      // 0.3.0 stored remembered credentials in plain text: seal them on first start.
+      credential = typeof saved === 'string' ? saved : isSealed(saved) ? await unseal(saved) : undefined;
+      if (typeof saved === 'string') await chrome.storage.local.set({ [KEY]: await seal(saved) });
+      if (credential) {
+        remembered = true;
+        meta = local[META] ?? {};
+      } else {
+        // The key is gone (for example, extension data was partly cleared): sign out cleanly.
+        await chrome.storage.local.remove([KEY, META]);
+        remembered = false;
+        meta = {};
+      }
       // 0.3.0 also kept a session copy of remembered credentials; keep a single copy.
       if (session[KEY]) await chrome.storage.session.remove([KEY, META]);
     } else {
-      credential = session[KEY] || undefined;
+      credential = typeof session[KEY] === 'string' ? session[KEY] : undefined;
       remembered = false;
       meta = session[META] ?? {};
     }
@@ -92,7 +104,7 @@ async function store(token: string, remember: boolean, method: Method) {
   const login = await identify(token);
   const nextMeta: Meta = { login, method };
   await areaFor(!remember).remove([KEY, META]);
-  await areaFor(remember).set({ [KEY]: token, [META]: nextMeta });
+  await areaFor(remember).set({ [KEY]: remember ? await seal(token) : token, [META]: nextMeta });
   credential = token;
   remembered = remember;
   meta = nextMeta;

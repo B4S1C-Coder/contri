@@ -13,7 +13,12 @@ Only public repositories are analyzed, even if your sign-in could see more. Priv
 - **Sign in with GitHub (device flow):** you approve a code on github.com. CONTRI receives a token with no scopes (public, read-only access) directly from GitHub. Your password never touches CONTRI.
 - **Personal access token:** entered only on the extension's own Settings page.
 
-By default the token is kept in session storage and forgotten when the browser closes. “Stay signed in” keeps it in extension-local storage until you sign out or uninstall; this is not an encrypted vault. Both storage areas are restricted to trusted extension contexts, so scripts running on GitHub pages cannot read the token. It is sent only to `api.github.com`. Sign out in Settings, and revoke access at https://github.com/settings/applications (OAuth) or https://github.com/settings/personal-access-tokens (tokens).
+The token is kept in exactly one place:
+
+- **By default:** in session storage, which Chrome keeps in memory. It is forgotten when the browser closes.
+- **“Stay signed in”:** in extension-local storage, encrypted with AES-GCM (256-bit). The key is a non-extractable Web Crypto key kept in the extension's own IndexedDB, so its raw bytes cannot be read by script. This protects the token against casual disclosure (for example in profile backups); it is not a password manager, and someone with full control of your computer and browser profile could still use your session.
+
+Extension storage is restricted to trusted extension contexts, so scripts running on GitHub pages, including CONTRI's own badges, cannot read the token. It is sent only to `api.github.com` over HTTPS. If GitHub rejects it (expired or revoked), Settings tells you to reconnect. Sign out in Settings, and revoke access at https://github.com/settings/applications (OAuth) or https://github.com/settings/personal-access-tokens (tokens).
 
 ## On-device AI
 
@@ -21,7 +26,7 @@ By default the token is kept in session storage and forgotten when the browser c
 
 ## Stored on your device
 
-- Cached public reports (up to 80, expiring after 10 minutes to 24 hours) and maintainer rosters (7 days). Clear them in Settings.
+- Cached public reports (up to 80, expiring after a few minutes to 24 hours) and maintainer rosters (7 days). Clear them in Settings.
 - Your shortlist and notes (up to 50 items), and watched issues (up to 10).
 - Preferences and widget position.
 
@@ -48,4 +53,25 @@ No all-sites access. No remote code: all JavaScript and fonts ship in the packag
 
 The contribution brief is assembled locally. **Copy brief** puts it on your clipboard; the ChatGPT, Claude and Gemini links open those sites without the brief. If you paste it there, that provider's terms apply.
 
-CONTRI does not sell data, use it for advertising or credit decisions, or transfer it beyond what is described here. Questions: https://github.com/alphasafal/contri/issues (never post tokens or personal data).
+## Data handled, at a glance
+
+| Data                                          | Where it goes                                   | Kept                                          |
+| --------------------------------------------- | ----------------------------------------------- | --------------------------------------------- |
+| GitHub token (optional)                       | Your device; sent only to `api.github.com`      | Until browser exit, or sign-out if remembered |
+| Repository and issue in the current page URL  | Used on your device to query `api.github.com`   | Not stored as history                         |
+| Public GitHub data (activity, issues, people) | Fetched from `api.github.com`, cached on device | Minutes to 7 days                             |
+| Your shortlist, notes and watched issues      | Your device only                                | Until you remove them                         |
+| Issue text for on-device AI                   | Chrome's built-in model on your device          | Not stored                                    |
+| Preferences and widget position               | Your device only                                | Until you uninstall                           |
+
+CONTRI has no server of its own, so the developer never receives any of this.
+
+## Limited Use
+
+The use of information received through CONTRI adheres to the [Chrome Web Store User Data Policy](https://developer.chrome.com/docs/webstore/program-policies/), including the Limited Use requirements. Data is used only to provide CONTRI's single purpose: helping you decide where and how to contribute to public GitHub projects. CONTRI does not sell data, transfer it to data brokers or advertising platforms, use it for advertising, or use it to determine creditworthiness or for lending. No human reads it.
+
+## Changes
+
+If this policy or the way CONTRI handles data changes, the change is listed in the [changelog](CHANGELOG.md) and the extension's release notes before it ships.
+
+Questions: https://github.com/alphasafal/contri/issues (never post tokens or personal data).
