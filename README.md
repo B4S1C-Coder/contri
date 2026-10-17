@@ -1,8 +1,13 @@
 <div align="center">
 
-<img src="docs/assets/logo.png" width="84" alt="CONTRI logo" />
+<a href="https://contri-two.vercel.app">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/contri-logo-white.png" />
+    <img src="docs/assets/contri-logo-dark.png" width="360" alt="contri." />
+  </picture>
+</a>
 
-# CONTRI — Open Source Compass
+### Open Source Compass
 
 **Find open-source issues you can actually take.**
 
@@ -17,17 +22,16 @@ Project activity, maintainer reply times, claims and linked pull requests — ri
 [![Good first issues](https://img.shields.io/github/issues/alphasafal/contri/good%20first%20issue?label=good%20first%20issues&color=3e5143)](https://github.com/alphasafal/contri/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
 [![Stars](https://img.shields.io/github/stars/alphasafal/contri?style=social)](https://github.com/alphasafal/contri/stargazers)
 
-[Website](https://contri-two.vercel.app) · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Contributing](CONTRIBUTING.md)
+**🌐 [contri-two.vercel.app](https://contri-two.vercel.app)** · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Contributing](CONTRIBUTING.md) · [Launch kit](docs/LAUNCH.md)
 
-<img src="docs/assets/issue-badge.webp" width="560" alt="A CONTRI badge under a GitHub issue title reading “Claim went quiet”" />
+<img src="docs/assets/screenshot-issue.webp" width="880" alt="contri. on a GitHub issue: a “Claim went quiet” badge under the title and the details panel" />
 
 </div>
 
 <table>
   <tr>
-    <td align="center"><img src="docs/assets/widget-overview.webp" width="250" alt="Overview: exact merged PRs, human authors, commits and a 90-day chart" /><br /><sub><b>Is it alive?</b></sub></td>
-    <td align="center"><img src="docs/assets/widget-team.webp" width="250" alt="Team: first reply times for outside contributors and the maintainer roster" /><br /><sub><b>Will someone reply?</b></sub></td>
-    <td align="center"><img src="docs/assets/widget-issue.webp" width="250" alt="Issue check: claim detection, linked PRs, on-device AI and contribution brief" /><br /><sub><b>Can I take this issue?</b></sub></td>
+    <td width="50%"><img src="docs/assets/screenshot-overview.webp" alt="Overview: exact merged PRs, human authors, commits and a 90-day chart" /><p align="center"><b>Is it alive?</b></p></td>
+    <td width="50%"><img src="docs/assets/screenshot-team.webp" alt="Team: first reply times for outside contributors and the maintainer roster" /><p align="center"><b>Will someone reply?</b></p></td>
   </tr>
 </table>
 
@@ -36,6 +40,8 @@ Project activity, maintainer reply times, claims and linked pull requests — ri
 Starting in open source is mostly guesswork: is the project still maintained, will anyone review my PR, and is someone already working on that “good first issue”? CONTRI answers those three questions on the page you're already on, using public evidence it links to — no backend, no analytics, public repositories only.
 
 ## What it does
+
+<p align="center"><img src="docs/assets/issue-badge.webp" width="640" alt="The contri. badge under a GitHub issue title" /></p>
 
 | Where              | What you see                                                                                                                                                                                          |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +57,7 @@ Starting in open source is mostly guesswork: is the project still maintained, wi
 
 CONTRI follows GitHub's light or dark appearance with the same teal glass look.
 
-<p align="center"><img src="docs/assets/widget-dark.webp" width="250" alt="CONTRI in GitHub dark mode" /></p>
+<p align="center"><img src="docs/assets/screenshot-dark.webp" width="720" alt="contri. in GitHub dark mode" /></p>
 
 ## Install
 

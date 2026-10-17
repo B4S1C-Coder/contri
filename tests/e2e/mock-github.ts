@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { blankPage, issuePage, repoPage } from './mock-pages';
 
 /**
  * A tiny fake of github.com + api.github.com served over HTTPS. Chromium is pointed
@@ -14,25 +15,6 @@ import { join } from 'node:path';
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();
 const REPO = 'acme/widgets';
-
-const page = (
-  title: string,
-  body: string,
-) => `<!doctype html><html lang="en" data-color-mode="light"><head><meta charset="utf-8"><title>${title}</title></head>
-<body style="font-family:sans-serif;margin:0"><main style="display:flex;gap:24px;padding:24px">${body}</main></body></html>`;
-
-const repoPage = () =>
-  page(
-    `${REPO}`,
-    `<div style="flex:1"><h1>${REPO}</h1><p>README</p><a id="go-issue" href="/${REPO}/issues/7">Issue 7</a></div>
-     <div class="Layout-sidebar" style="width:280px"><div class="BorderGrid-cell"><h2>About</h2><p>Widgets for everyone</p></div></div>`,
-  );
-
-const issuePage = (n: number) =>
-  page(
-    `Issue #${n}`,
-    `<div style="flex:1"><div data-testid="issue-header"><h1><bdi data-testid="issue-title">Fix the widget crash</bdi> <span>#${n}</span></h1></div><p>Body</p></div>`,
-  );
 
 const repoJson = {
   full_name: REPO,
@@ -68,6 +50,25 @@ const issue7 = {
   comments: 2,
 };
 
+const AUTHORS = ['ana', 'ben', 'omar', 'lena', 'kai', 'mia', 'raj', 'zoe', 'li', 'sam'];
+/** 42 merged PRs spread over 90 days, busier recently, for a realistic weekly chart. */
+const MERGES = Array.from({ length: 42 }, (_, i) => {
+  const days = Math.round(Math.pow(i / 42, 1.3) * 86) + 1;
+  return {
+    number: 100 - i,
+    html_url: `https://github.com/acme/widgets/pull/${100 - i}`,
+    created_at: ago(days + 1 + (i % 3)),
+    merged_at: ago(days),
+    user: { login: AUTHORS[i % AUTHORS.length] },
+  };
+});
+
+const COMMITS = Array.from({ length: 64 }, (_, i) => ({
+  author: { login: AUTHORS[(i * 3) % AUTHORS.length] },
+  html_url: `https://github.com/acme/widgets/commit/${i}`,
+  commit: { author: { date: ago(1 + Math.floor(i * 1.3)) } },
+}));
+
 /** Outside-contributor PRs and issues for the Team sample (hours until a maintainer replied). */
 const SAMPLE: Record<
   number,
@@ -101,37 +102,14 @@ const SAMPLE: Record<
     replyHours: 2,
     replier: 'quietmaint',
   },
-  43: { pr: false, title: 'Feature: keyboard shortcuts', author: 'li', created: ago(2), replyHours: null, replier: '' },
+  43: { pr: false, title: 'Feature: keyboard shortcuts', author: 'li', created: ago(4), replyHours: 5, replier: 'ana' },
 };
 
 function rest(path: string, query: URLSearchParams): unknown | undefined {
   const base = `/repos/${REPO}`;
   if (path === base) return repoJson;
-  if (path === `${base}/pulls`)
-    return [
-      {
-        number: 1,
-        html_url: 'https://github.com/acme/widgets/pull/1',
-        created_at: ago(4),
-        merged_at: ago(3),
-        user: { login: 'ana' },
-      },
-      {
-        number: 2,
-        html_url: 'https://github.com/acme/widgets/pull/2',
-        created_at: ago(12),
-        merged_at: ago(10),
-        user: { login: 'ben' },
-      },
-    ];
-  if (path === `${base}/commits`)
-    return [
-      {
-        author: { login: 'ana' },
-        html_url: 'https://github.com/acme/widgets/commit/1',
-        commit: { author: { date: ago(1) } },
-      },
-    ];
+  if (path === `${base}/pulls`) return MERGES;
+  if (path === `${base}/commits`) return COMMITS;
   if (path === `${base}/releases/latest`)
     return {
       name: 'v1.2.0',
@@ -329,7 +307,7 @@ export function startMockGitHub(port: number) {
       const issue = /^\/acme\/widgets\/issues\/(\d+)$/.exec(url.pathname);
       if (issue) return send(200, issuePage(Number(issue[1])), 'text/html');
       if (url.pathname === '/favicon.ico') return send(204, '');
-      return send(200, page('GitHub', '<h1>Explore</h1>'), 'text/html');
+      return send(200, blankPage(), 'text/html');
     },
   );
   server.listen(port);
