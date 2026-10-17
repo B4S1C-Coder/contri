@@ -42,3 +42,27 @@ hero.addEventListener('pointermove',event=>{if(motionPaused||motion.matches||eve
 hero.addEventListener('pointerdown',event=>{if(motionPaused||motion.matches||event.target.closest('a,button,input,select,textarea'))return;const r=hero.getBoundingClientRect(),ring=document.createElement('span');ring.className='water-ripple';ring.setAttribute('aria-hidden','true');ring.style.left=`${event.clientX-r.left}px`;ring.style.top=`${event.clientY-r.top}px`;hero.append(ring);ring.addEventListener('animationend',()=>ring.remove(),{once:true});setTimeout(()=>ring.remove(),1500);});
 const ambientObserver=new IntersectionObserver(entries=>{hero.classList.toggle('ambient-offscreen',!entries[0].isIntersecting);});ambientObserver.observe(hero);
 document.addEventListener('visibilitychange',()=>hero.classList.toggle('ambient-hidden',document.hidden));
+
+// Live GitHub numbers for the install section. Public data, fetched from the visitor's browser and cached for 15 minutes.
+(()=>{
+ const KEY='contri-repo-stats',TTL=15*60*1000,fmt=n=>new Intl.NumberFormat('en',{notation:n>=10000?'compact':'standard'}).format(n);
+ const show=d=>{
+  const stars=document.querySelectorAll('[data-stat="stars"]');
+  stars.forEach(el=>{el.textContent=fmt(d.stars);el.hidden=false;});
+  const parts=[];
+  if(d.downloads)parts.push(`${fmt(d.downloads)} ${d.downloads===1?'download':'downloads'}`);
+  if(d.watchers)parts.push(`${fmt(d.watchers)} watching`);
+  const box=document.getElementById('repo-stats');box.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');box.hidden=!parts.length;
+ };
+ let cached=null;try{cached=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
+ if(cached&&Date.now()-cached.at<TTL){show(cached);return;}
+ const api='https://api.github.com/repos/alphasafal/contri';
+ Promise.all([fetch(api).then(r=>r.ok?r.json():Promise.reject(r.status)),fetch(api+'/releases?per_page=100').then(r=>r.ok?r.json():[]).catch(()=>[])])
+  .then(([repo,releases])=>{
+   const downloads=releases.flatMap(r=>r.assets||[]).filter(a=>/\.zip$/.test(a.name)).reduce((t,a)=>t+a.download_count,0);
+   const d={stars:repo.stargazers_count,watchers:repo.subscribers_count,downloads,at:Date.now()};
+   try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}
+   show(d);
+  }).catch(()=>{if(cached)show(cached);});
+})();
+document.getElementById('download-link').addEventListener('click',()=>{document.getElementById('star-nudge').hidden=false;});

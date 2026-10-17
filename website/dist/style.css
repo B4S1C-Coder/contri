@@ -29,3 +29,15 @@
 .brand-mark{border:0;border-radius:0;transform:none;display:block;flex:none}.menu-toggle{display:none;place-items:center;font-size:16px}.faq summary>span{flex:none}
 @media(max-width:600px){.menu-toggle{display:grid}}
 @media(max-width:600px){.journey{margin-top:34px}}
+
+.star-pill{display:inline-flex;align-items:center;gap:10px;border:1px solid #ffffffa6;border-radius:50px;background:#ffffff1f;color:#fff;padding:13px 20px;font-weight:600;font-size:13px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:background .2s,transform .2s}
+.star-pill:hover{background:#ffffff38;transform:translateY(-2px)}
+.star-pill .i{font-size:16px}
+.star-count{font-variant-numeric:tabular-nums;margin-left:4px;padding:2px 9px;border-radius:20px;background:#fcfcf4;color:#223b36;font-size:12px}
+.repo-stats{margin:22px 0 0;font-size:12px;color:#fbf9ec;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.repo-stats span+span::before{content:"·";margin:0 10px;opacity:.7}
+.star-nudge{max-width:460px;margin:22px auto 0;padding:16px 20px;border:1px solid #ffffff59;border-radius:18px;background:#20403a8c;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;gap:12px}
+.star-nudge p{margin:0;font-size:13px;line-height:1.5}
+.star-nudge .star-pill{padding:9px 16px;font-size:12px}
+@media(max-width:600px){.star-pill{font-size:11px;padding:11px 16px}.repo-stats{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.star-pill{transition:none}.star-pill:hover{transform:none}}
