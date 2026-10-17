@@ -41,6 +41,122 @@ describe('repository metadata', () => {
   });
 });
 
+describe('GitHub API states', () => {
+  const only = (response: () => Response | Promise<Response>) => setTransport(fakeGitHub([response]).fetcher);
+
+  it('explains deleted, renamed-away or private repositories (404)', async () => {
+    only(() => json({ message: 'Not Found' }, 404));
+    await expect(publicRepo(createCtx(false), 'acme/gone')).rejects.toThrow(/private, renamed or deleted/);
+  });
+  it('does not blame the user for a server error (500) or an unknown status', async () => {
+    only(() => json({ message: 'boom' }, 500));
+    await expect(publicRepo(createCtx(false), 'acme/widgets')).rejects.toThrow(/GitHub returned 500/);
+  });
+  it('maps 429 and secondary rate limits to the limit message', async () => {
+    only(() => json({ message: 'slow' }, 429, { 'x-ratelimit-remaining': '10' }));
+    await expect(publicRepo(createCtx(false), 'acme/widgets')).rejects.toThrow(/limit reached/);
+    clearMemory();
+    only(() => json({ message: 'You have exceeded a secondary rate limit' }, 403, { 'x-ratelimit-remaining': '40' }));
+    await expect(publicRepo(createCtx(false), 'acme/widgets')).rejects.toThrow(/limit reached/);
+  });
+  it('reports a network failure as a connection problem', async () => {
+    only(() => Promise.reject(new TypeError('Failed to fetch')));
+    await expect(publicRepo(createCtx(false), 'acme/widgets')).rejects.toThrow(/Unable to reach GitHub/);
+  });
+  it('reports a timeout as GitHub being slow', async () => {
+    only(() => Promise.reject(new DOMException('The operation timed out.', 'TimeoutError')));
+    await expect(publicRepo(createCtx(false), 'acme/widgets')).rejects.toThrow(/took too long/);
+  });
+  it('lets a cancelled request stay a cancellation', async () => {
+    const controller = new AbortController();
+    only(() => {
+      controller.abort();
+      return Promise.reject(new DOMException('Aborted', 'AbortError'));
+    });
+    await expect(publicRepo(createCtx(false, controller.signal), 'acme/widgets')).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+  it('keeps a small request reserve instead of spending the last requests', async () => {
+    let calls = 0;
+    only(() => {
+      calls++;
+      return json(repoJson(), 200, { 'x-ratelimit-remaining': '3', 'x-ratelimit-reset': '9999999999' });
+    });
+    const ctx = createCtx(false);
+    await publicRepo(ctx, 'acme/widgets');
+    clearMemory();
+    await expect(publicRepo(ctx, 'acme/widgets')).rejects.toThrow(/request reserve/);
+    expect(calls).toBe(1);
+  });
+  it('treats GraphQL RATE_LIMITED errors as a limit, not a fallback to REST', async () => {
+    const { fetcher, calls } = fakeGitHub([
+      repoRoute,
+      gql(() => ({ errors: [{ type: 'RATE_LIMITED', message: 'API rate limit exceeded' }] })),
+    ]);
+    setTransport(fetcher);
+    await expect(overview(createCtx(true), 'acme/widgets')).rejects.toThrow(/GraphQL limit/);
+    expect(calls.some((c) => c.includes('/pulls?'))).toBe(false);
+  });
+  it('falls back to REST when GraphQL returns data with null required fields', async () => {
+    const { fetcher } = fakeGitHub([
+      repoRoute,
+      gql(() => ({
+        data: { repository: { isPrivate: false, issue: null }, mergedCount: null },
+        errors: [{ message: 'Something went wrong while executing your query.' }],
+      })),
+      (u) =>
+        u.pathname === `${REPO}/issues/5`
+          ? json({
+              number: 5,
+              title: 'Quiet one',
+              html_url: 'https://github.com/acme/widgets/issues/5',
+              state: 'open',
+              created_at: isoAgo(3),
+              body: null,
+              user: null,
+              labels: ['bug'],
+              comments: 0,
+            })
+          : undefined,
+      (u) => (u.pathname === `${REPO}/issues/5/timeline` ? json([]) : undefined),
+      (u) => (u.pathname === `${REPO}/issues/5/comments` ? json([]) : undefined),
+    ]);
+    setTransport(fetcher);
+    const signedIn = await insight(createCtx(true), 'acme/widgets', 5);
+    expect(signedIn.source).toBe('rest');
+    expect(signedIn.warnings.join(' ')).toMatch(/standard API because GraphQL failed/);
+    expect(signedIn).toMatchObject({
+      issue: { author: null, labels: ['bug'], comments: 0, assignees: [] },
+      claim: { state: 'none' },
+      link: { state: 'clear' },
+      discussion: { complete: true, inspected: 0, latest: null },
+    });
+  });
+  it('refuses a pull request number on the issue path', async () => {
+    const { fetcher } = fakeGitHub([
+      repoRoute,
+      (u) =>
+        u.pathname === `${REPO}/issues/12`
+          ? json({
+              number: 12,
+              title: 'A PR',
+              html_url: 'x',
+              state: 'open',
+              created_at: isoAgo(1),
+              body: '',
+              user: null,
+              labels: [],
+              comments: 0,
+              pull_request: {},
+            })
+          : undefined,
+    ]);
+    setTransport(fetcher);
+    await expect(insight(createCtx(false), 'acme/widgets', 12)).rejects.toThrow(/pull request, not an issue/);
+  });
+});
+
 describe('overview', () => {
   it('explains an empty repository instead of suggesting a retry', async () => {
     const { fetcher } = fakeGitHub([
