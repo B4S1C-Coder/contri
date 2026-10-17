@@ -1,57 +1,201 @@
-# CONTRI
+<div align="center">
 
-A free, open-source glass widget for contributors on GitHub. Understand repository activity, inspect observed team responses, and find useful issues before investing your time.
+<img src="docs/assets/logo.png" width="84" alt="CONTRI logo" />
 
-**Development build:** the source and build are available; installed Chrome verification is pending. This is not a Chrome Web Store release.
+# CONTRI — Open Source Compass
 
-## Build and install
+**Find open-source issues you can actually take.**
 
-Use Node.js 24 and Chrome 124 or newer.
+Project activity, maintainer reply times, claims and linked pull requests — right on GitHub.
+
+[![CI](https://github.com/alphasafal/contri/actions/workflows/ci.yml/badge.svg)](https://github.com/alphasafal/contri/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/alphasafal/contri/actions/workflows/codeql.yml/badge.svg)](https://github.com/alphasafal/contri/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/alphasafal/contri?include_prereleases&sort=semver&color=476263)](https://github.com/alphasafal/contri/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-476263.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-476263?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-3e5143.svg)](CONTRIBUTING.md)
+[![Good first issues](https://img.shields.io/github/issues/alphasafal/contri/good%20first%20issue?label=good%20first%20issues&color=3e5143)](https://github.com/alphasafal/contri/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+[![Stars](https://img.shields.io/github/stars/alphasafal/contri?style=social)](https://github.com/alphasafal/contri/stargazers)
+
+[Website](https://contri-two.vercel.app) · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Contributing](CONTRIBUTING.md)
+
+<img src="docs/assets/issue-badge.webp" width="560" alt="A CONTRI badge under a GitHub issue title reading “Claim went quiet”" />
+
+</div>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/assets/widget-overview.webp" width="250" alt="Overview: exact merged PRs, human authors, commits and a 90-day chart" /><br /><sub><b>Is it alive?</b></sub></td>
+    <td align="center"><img src="docs/assets/widget-team.webp" width="250" alt="Team: first reply times for outside contributors and the maintainer roster" /><br /><sub><b>Will someone reply?</b></sub></td>
+    <td align="center"><img src="docs/assets/widget-issue.webp" width="250" alt="Issue check: claim detection, linked PRs, on-device AI and contribution brief" /><br /><sub><b>Can I take this issue?</b></sub></td>
+  </tr>
+</table>
+
+## Why CONTRI?
+
+Starting in open source is mostly guesswork: is the project still maintained, will anyone review my PR, and is someone already working on that “good first issue”? CONTRI answers those three questions on the page you're already on, using public evidence it links to — no backend, no analytics, public repositories only.
+
+## What it does
+
+| Where              | What you see                                                                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue page         | A badge beside the title: **Looks free**, **Claimed by @sam**, **Claim went quiet**, **Open PR #12** or **Assigned**. Click for the evidence.                                                         |
+| Repository page    | A badge in the About box with merges in the last 90 days and the team's typical reply time.                                                                                                           |
+| Overview           | Exact PRs merged in 90 days (common bots excluded), human authors, commits, weekly chart, median time to merge, latest release.                                                                       |
+| Team               | Median and average first team reply for outside PRs and issues, who is still waiting, and the maintainer roster — found from GitHub team badges, who labels/assigns/merges, CODEOWNERS and the owner. |
+| Issues             | Beginner presets, “Looks free” filter, claim detection, linked-PR checks (a whole page at once when signed in).                                                                                       |
+| On-device AI       | “Summarize the thread” and “How do I start?” using Chrome's built-in Gemini Nano. Runs locally; nothing is uploaded.                                                                                  |
+| Discover           | Projects matched to the languages you use, ranked by recent human merges and open good-first-issues.                                                                                                  |
+| Saved & watched    | A private shortlist with notes, side-by-side comparison, and **watched issues** that notify you when an issue is unassigned, gets a PR, goes quiet or closes.                                         |
+| Contribution brief | A source-linked prompt to paste into any AI chat when on-device AI is unavailable.                                                                                                                    |
+
+CONTRI follows GitHub's light or dark appearance with the same teal glass look.
+
+<p align="center"><img src="docs/assets/widget-dark.webp" width="250" alt="CONTRI in GitHub dark mode" /></p>
+
+## Install
+
+### From a release (recommended)
+
+1. Download `contri-v0.3.0.zip` from the [latest release](https://github.com/alphasafal/contri/releases) and unzip it.
+2. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`) and turn on **Developer mode**.
+3. Click **Load unpacked** and choose the unzipped folder.
+4. A welcome page opens. Sign in with GitHub (or skip and use anonymous mode).
+
+A Chrome Web Store listing is being prepared — see [docs/STORE-SUBMISSION.md](docs/STORE-SUBMISSION.md).
+
+### From source
+
+Requires Node.js 24.
 
 ```sh
 npm ci
-npm test
-npm run build
+npm run build        # outputs dist/
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist`. Open or reload a public GitHub repository. When updating a development build, click Reload on the extension card and reload the GitHub tab.
+Then **Load unpacked** → `dist`. After pulling changes, rebuild, click **Reload** on the extension card and reload your GitHub tab.
 
-A 360 × 460 px widget follows the repository. Drag its handle or use arrow keys while the handle is focused. Minimize to a 44 px launcher. Close hides it for the tab; the extension toolbar icon restores it. Use Reset position if needed. The widget is constrained to the viewport and never takes over a side panel.
+**Firefox (experimental):** `npm run package:firefox` creates `contri-v0.3.0-firefox.zip` for `about:debugging` → _Load Temporary Add-on_. On-device AI is Chrome-only.
 
-## What it shows
+## Signing in
 
-- **Overview:** repository context, last push, 90-day sampled human merges, distinct PR authors, linked human commits, open issue/PR counts, latest release, and source-linked activity.
-- **Team:** up to 20 recent outside-contributor PRs and 20 issues, separate response coverage, average and median first reply, unanswered waiting ages, and observed team responders. Load this deeper analysis when needed.
-- **Issues:** direct issue search, beginner and experienced presets, labels and assignment, and public timeline checks for referenced open/draft/closed/merged PRs.
-- **Explore:** compare up to five public repositories by sampled recent activity.
-- **Contribution guide:** detected README, license, contribution guide, conduct policy, and templates.
+Anonymous mode works within GitHub's limit of **60 requests per hour**. Signing in raises it to **5,000** and switches CONTRI to GitHub's GraphQL API, so most checks take one request instead of dozens.
 
-Numbers are evidence, not predictions. A cross-reference does not prove a PR implements an issue; no linked open PR found does not prove nobody has begun work. Public associations are not a complete maintainer roster. See [metric definitions](docs/METRICS.md).
+- **Sign in with GitHub** uses the OAuth device flow: you get a short code, approve it on github.com, done. No password or token ever passes through CONTRI, and no scopes are requested (public, read-only access). Builds need a client ID — see below.
+- **Personal access token**: Settings walks you through creating a fine-grained, read-only token for public repositories.
 
-## Optional token
+The sign-in lasts until the browser closes unless you choose “Stay signed in”. It is stored where GitHub pages cannot read it and is only ever sent to `api.github.com`.
 
-Choose **Connect GitHub** in the widget. Settings walks you through creating a fine-grained token with public repository access and no extra write permissions. A token increases request capacity, but GitHub still applies limits. Default storage lasts for the browser session; optional local remembering and Disconnect are provided. Never paste a token into the website, an issue, or a screenshot. See [privacy](PRIVACY.md).
+### Configuring “Sign in with GitHub” for your build
 
-## Development and checks
+1. On GitHub: **Settings → Developer settings → OAuth Apps → New OAuth App**. Any homepage URL works (e.g. the repository); the callback URL is not used.
+2. Tick **Enable Device Flow** and save. Copy the **Client ID** (it is public by design; there is no secret).
+3. Create `.env` with `VITE_GITHUB_CLIENT_ID=<your client id>` and run `npm run build`.
 
-`npm run dev` previews layout only. The installed extension is needed for Chrome APIs and live data.
+Without a client ID, Settings shows only the token option.
 
-`npm test` runs offline fixtures. `CONTRI_LIVE=1 npm test -- tests/live.test.ts` runs an optional public API smoke check and consumes anonymous GitHub request capacity.
+## Request budget
 
-`npm run package` produces the extension ZIP and checksum. Release publication is gated on installed Chrome checks. Current evidence and limitations are in [verification](docs/VERIFICATION.md).
+| Action                  | Anonymous       | Signed in |
+| ----------------------- | --------------- | --------- |
+| Overview                | ~7 requests     | 2         |
+| Team analysis           | ~25 requests    | 2–3       |
+| Issue check             | ~3 requests     | 1         |
+| Page of 30 issues + PRs | 2 + 3 per issue | 2         |
 
-The buildless launch website lives in `website/dist`. Preview it with `python3 -m http.server 4174 --directory website/dist`. Demo data is explicitly fictional and isolated from live extension views.
+Reports are cached (team: 6 hours, overview: 30 minutes, issue checks: 10 minutes). Partial reports are cached for a third of that so large repositories don't burn requests on every visit.
 
-## Contribute
+## Development
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Full source is MIT licensed. Small improvements to accessibility, metrics, fixtures, and documentation are welcome. Original code patterns from the user-supplied maintainerPulse archive are documented in [the review](docs/maintainer-pulse-review.md).
+```sh
+npm run dev          # layout preview of the widget (no live data)
+npm test             # unit tests (fixtures, no network)
+npm run test:e2e     # installs dist/ into Chromium and drives it on a mock GitHub
+npm run lint         # ESLint
+npm run format       # Prettier
+npm run check        # format check + lint + unit tests + build
+npm run package      # dist → contri-v<version>.zip (+ sha256)
+npm run verify:package
+```
 
-## Prepare your contribution
+For `test:e2e`, run `npm run build` first and install the browser once with `npx playwright install chromium`.
 
-Use **Prepare my contribution** on an issue to preview a source-linked brief and checklist. Copy it into your preferred AI chat for explanation, investigation planning, or a PR checklist. No data is sent automatically and no AI login is collected. Chat subscription limits still apply; direct API integration is not included.
+The code is organized so contributors can work on one layer at a time:
 
-Save projects or issues to **My shortlist**, add local notes, and compare up to three projects. Saved items stay in your Chrome profile and can be removed individually.
+```
+src/core/        pure logic: metrics, maintainer roster, claim detection, verdicts (unit-tested)
+src/background/  service worker: sign-in, request queue, caching, GitHub REST + GraphQL reports
+src/content/     what runs on github.com: launcher, widget UI, badges, on-device AI
+src/settings/    the Settings / welcome page
+src/shared/      types and helpers shared by both sides
+tests/unit/      Vitest
+tests/e2e/       Playwright + mock GitHub
+```
 
-## Launch materials
+More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-[Store submission guide](docs/STORE-SUBMISSION.md) · [Release checklist](docs/RELEASE-CHECKLIST.md) · [Privacy policy](PRIVACY.md) · [License](LICENSE)
+## Honest numbers
+
+Every number links to its evidence. Unavailable data is shown as “—”, never as zero. Samples say how much they cover, and ≥ marks a lower bound. A missing linked PR does not prove nobody is working on an issue, and CONTRI says so. Full definitions: [docs/METRICS.md](docs/METRICS.md).
+
+## Contributing
+
+Issues and pull requests are welcome — especially for accessibility, metric accuracy, GitHub layout changes that break badges, and translations. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues are labeled `good first issue` (CONTRI will tell you whether they're free).
+
+## FAQ
+
+<details>
+<summary><b>Does CONTRI send my data anywhere?</b></summary>
+
+Only to GitHub's API, to read public repository data. There is no CONTRI server and no analytics. On-device AI runs inside Chrome. See [PRIVACY.md](PRIVACY.md).
+</details>
+
+<details>
+<summary><b>Does “Looks free” guarantee nobody is working on an issue?</b></summary>
+
+No. It means CONTRI found no assignee, no recent claim and no linked open pull request. Someone may be working without saying so — always comment before you start.
+</details>
+
+<details>
+<summary><b>Why does the team tab say “not enough evidence”?</b></summary>
+
+Timings need at least three answered items in the sample. Small or quiet projects often don't have that many recent outside contributions, and CONTRI won't guess.
+</details>
+
+<details>
+<summary><b>Does it work on private repositories?</b></summary>
+
+No, by design. CONTRI is for joining public open-source projects.
+</details>
+
+<details>
+<summary><b>Which browsers are supported?</b></summary>
+
+Chrome, Edge, Brave and other Chromium browsers (version 124+). Firefox 128+ is experimental. On-device AI needs a Chrome build with built-in AI.
+</details>
+
+## Roadmap
+
+- [x] Issue availability badges with claim detection
+- [x] Maintainer roster beyond GitHub's team badge
+- [x] Sign in with GitHub (device flow) and GraphQL reports
+- [x] On-device AI summaries
+- [x] Watched issues with notifications
+- [ ] Chrome Web Store listing
+- [ ] Badges on GitHub's issue list and search results
+- [ ] Translations
+- [ ] Maintainer view: who is waiting longest for a reply
+
+Have an idea? [Open a feature request](https://github.com/alphasafal/contri/issues/new?template=feature_request.yml).
+
+## Contributors
+
+<a href="https://github.com/alphasafal/contri/graphs/contributors"><img src="https://contrib.rocks/image?repo=alphasafal/contri" alt="Contributors" /></a>
+
+If CONTRI helped you find your first contribution, a ⭐ helps other newcomers find it too.
+
+[![Star history](https://api.star-history.com/svg?repos=alphasafal/contri&type=Date)](https://star-history.com/#alphasafal/contri&Date)
+
+## License
+
+MIT © Safal Gupta. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,31 +1,73 @@
-# Metric definitions
+# How CONTRI's numbers work
 
-## Overview
+Every figure is public GitHub evidence with a link back to its source. Unavailable data is shown as “—”, never as zero. When a sample is capped, CONTRI says so and marks lower bounds with ≥.
 
-The observation window is the 90 days preceding collection. Thirteen chart bins cover twelve seven-day periods and a final six-day period. Merges use `merged_at`; authors are distinct case-insensitive PR-author logins. Commits require a linked GitHub author and author timestamp in the window. Known bots and bot-suffixed accounts are excluded. Unknown authors are excluded, not assumed human.
+Signed-in reports use GitHub's GraphQL API; anonymous reports use the REST API. Both are normalized into the same shapes before any calculation (`src/core/`), so the definitions below apply to both.
 
-Up to 100 recently updated PRs and 100 commits are inspected. A full page indicates possible truncation; ≥ denotes a lower bound. A quiet sample does not prove inactivity. Errors are unavailable, not zero. Repository last push is GitHub's `pushed_at`, which may include automation. Open issue and PR counts are separate GitHub search counts. Latest published release uses the releases endpoint; no release is not an error. Median merge time uses sampled human PRs merged within the window and requires three merged items for a headline timing.
+## Overview (90-day window)
+
+- **PRs merged · 90d** — exact count from GitHub search: `is:pr is:merged merged:>=<date>`, excluding the common automation accounts Dependabot, Renovate, GitHub Actions and pre-commit.ci.
+- **Human PR authors** — distinct, case-insensitive logins among human merges in the most recently updated 100 merged PRs. Bots are excluded by account type and the `[bot]` suffix.
+- **Weekly chart** — human merges per week (12 seven-day periods plus the final partial week) from the same sample. “Latest 100 merges” means the sample did not reach back 90 days.
+- **Commits · 90d** — signed in: total commits on the default branch since the window start. Anonymous: up to 100 recent commits (≥ when capped).
+- **Human merges in the last four weeks** — a quick health line from the weekly chart.
+- **Median time to merge** — creation to merge for human PRs merged in the window; needs at least three.
+- **Open issues / PRs** — GitHub search totals.
 
 ## Team responses
 
-Up to 20 outside-contributor PRs and 20 issues created within the past 90 days are selected from up to 100 newest search candidates per type. Draft PRs, bots, and unknown associations are excluded. Eligible outside associations: NONE, FIRST_TIMER, FIRST_TIME_CONTRIBUTOR, CONTRIBUTOR.
+**Sample.** Outside contributors' PRs (not drafts) and issues created in the last 90 days, newest first: 10 of each anonymously, 20 signed in. Outside means GitHub's association is NONE, FIRST_TIMER, FIRST_TIME_CONTRIBUTOR or CONTRIBUTOR **and** the author is not on the maintainer roster.
 
-For each item, up to 300 conversation comments are inspected. PRs additionally inspect up to 300 submitted reviews and 300 inline review comments. Failed or truncated histories are excluded from response denominators and timing calculations. At exactly 300 items, completion is conservatively unknown.
+**Maintainer roster.** GitHub hides private organization membership, so `author_association` alone misses many maintainers. A person counts as project team when any of these is observed:
 
-Team replies require OWNER, MEMBER, or COLLABORATOR association, a human account, and a timestamp at or after item creation and not in the future. Author self-replies are excluded from response metrics. First response is the earliest qualifying reply across inspected histories. Mean and median use answered items only. Unanswered complete histories are shown with current waiting age, never as zero-hour answers. Fewer than three answered items yields insufficient timing evidence. Issue and PR statistics remain separate.
+| Basis                    | Evidence                                                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub team badge        | OWNER, MEMBER or COLLABORATOR association on a comment or review                                                                                                                          |
+| Labels or assigns issues | `labeled`, `assigned`, `milestoned`, `locked`, `pinned`, `transferred`, `marked_as_duplicate` events (last 100 repository events). Labels applied by issue forms at creation are ignored. |
+| Merges pull requests     | `merged` events, and `mergedBy` on recent merged PRs (signed in)                                                                                                                          |
+| CODEOWNERS               | individual `@user` entries in `.github/CODEOWNERS` (signed in also checks `CODEOWNERS`, `docs/CODEOWNERS`)                                                                                |
+| Repository owner         | the owner of a user-owned repository                                                                                                                                                      |
 
-Observed responders and last activity are repository-specific samples, not a complete maintainer roster or online status. Team activity may include a team member's self-comment even though it does not qualify as a response to an outside author.
+**First team reply.** The earliest comment or review by a human roster member who is not the author, at or after creation. Signed-in histories load the first 30 comments and reviews per item; anonymous histories load up to 100 of each.
 
-## Issue opportunities
+**Timings.** Median and average use answered items only. Items without a team reply are listed with how long they have been waiting. If a history was capped before any team reply appeared, the item is marked “timing unknown” and excluded. Fewer than three answered items → “not enough evidence”. PR and issue figures stay separate.
 
-Open unlocked issues can be filtered by labels, assignment and search. Updated time is not necessarily discussion time. On-demand checks inspect public timeline references (up to 300 events), retrieve referenced PR states, and distinguish draft/open/closed/merged. A cross-reference can be unrelated. No linked open PR found is not proof of availability. Missing or failed references and truncated timelines never produce a clear result.
+## Can I work on this issue?
 
-The same check reads up to 300 issue comments for the last observed human discussion and team-comment count. Its independent coverage flag discloses unavailable/truncated discussion. Team comments are association-labeled human comments, including a team author's own comment; they are participation evidence, not response times. With a truncated history the latest inspected comment may not be the latest actual comment.
+The verdict picks the first that applies:
 
-## Discovery and comparison
+1. **Closed** — the issue is closed.
+2. **Open PR #n** — an open pull request references the issue.
+3. **Assigned** — the issue has assignees.
+4. **Claimed by @x** — a non-team commenter offered to work on it within the last 21 days, or has an open PR.
+5. **Claim went quiet** — the latest claim is older than 21 days with no later comment or open PR from that person.
+6. **Partly checked** — references could not be checked completely.
+7. **Looks free** — none of the above.
 
-Explore ranks up to five returned public, non-fork, non-archived candidates by sampled merges, authors, then commits. It is not a ranking of all GitHub. Shortlist comparison displays evidence for up to three explicitly selected projects without declaring a winner.
+**Linked pull requests.** Signed in: GitHub's Development panel and closing keywords (`closedByPullRequestsReferences`) plus up to 50 timeline cross-references. Anonymous: up to 300 timeline cross-references (Development-panel links are not visible anonymously; CONTRI warns when one exists). Private repositories are filtered out. A cross-reference may be unrelated.
 
-## Freshness and interpretation
+**Claims.** Comments such as “I'd like to work on this”, “can I take this?”, “please assign me”, “/assign”, “I'm working on a fix”. Quoted replies and code blocks are ignored, questions like “is anyone working on this?” are not claims, and comments such as “I'm no longer working on this” or “feel free to take it” release a claim. Team members' comments are never treated as claims. This is a heuristic — always read the thread.
 
-Complete public sections may be cached for 15 minutes. Report timestamps show collection time. Partial sections can be retried; Refresh or connection changes invalidate cached reports. A v4 schema separates new report shapes from old caches. Contribution briefs are local text assembled from displayed issue metadata and optional checks. No AI inference is used to calculate any metric.
+**Discussion.** The latest 100 comments (anonymous: up to 300) give the latest human comment and the number of team comments.
+
+## Discover
+
+Search: `good-first-issues:>=2 archived:false is:public pushed:>=<30 days ago>` plus your keyword and language. Signed in, “Match my languages” uses the two most common primary languages of your own recently pushed, non-fork repositories. Ranking score = 2 × min(human merges among the latest 50 merged PRs in 90 days, 60) + min(open good-first-issues, 30). It ranks the compared candidates, not all of GitHub.
+
+## On-device AI
+
+Summaries and “How do I start?” come from Chrome's built-in model and never feed any metric. The transcript keeps the issue description and the newest comments that fit about 14,000 characters; CONTRI notes when a thread was cut.
+
+## Freshness
+
+| Report          | Cached for | Partial reports |
+| --------------- | ---------- | --------------- |
+| Repository      | 30 min     | 10 min          |
+| Overview        | 30 min     | 10 min          |
+| Team            | 6 h        | 2 h             |
+| Issue check     | 10 min     | ~3 min          |
+| Issue search    | 10 min     | ~3 min          |
+| Discover        | 6 h        | 2 h             |
+| Community files | 24 h       | 8 h             |
+
+Every report shows when it was checked and has a refresh button. Signing in or out clears cached reports.

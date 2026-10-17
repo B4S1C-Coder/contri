@@ -1,13 +1,38 @@
-# Contributing
+# Contributing to CONTRI
 
-Start with an issue explaining the contributor problem and a reproducible example. Small focused pull requests are welcome.
+Thanks for helping make open source easier to join. Small, focused pull requests are the easiest to review.
 
-1. Fork and clone the full repository.
-2. Use Node.js 24 and run `npm ci`.
-3. Run `npm test` and `npm run build`.
-4. Load `dist` unpacked in Chrome and test the affected flow.
-5. Include evidence of behavior and describe limitations in your PR.
+## Before you start
 
-Keep data calculations separate from presentation. Never replace unavailable evidence with zero. Add fixtures for changed metric behavior. Check narrow panels, keyboard access, reduced motion, anonymous API limits, and public-only permissions. Never commit tokens, local caches, personal configuration, or fabricated live metrics.
+- Look for an existing issue, or open one describing the contributor problem and how to reproduce it.
+- Comment that you'd like to work on it. (CONTRI itself will show maintainers and other contributors that you claimed it.)
 
-UI-only previews cannot verify Chrome permissions or tab-following behavior. Report which checks you actually performed.
+## Set up
+
+1. Fork and clone the repository. Use Node.js 24 (`.nvmrc`).
+2. `npm ci`
+3. `npm run build`, then load `dist` with **Load unpacked** in `chrome://extensions`.
+4. Optional: add `VITE_GITHUB_CLIENT_ID` to `.env` to test “Sign in with GitHub” (see README).
+
+## Before opening a pull request
+
+```sh
+npm run check        # Prettier, ESLint, unit tests, build
+npm run test:e2e     # installed-extension tests (needs `npx playwright install chromium` once)
+```
+
+Then try the flow you changed in a real Chrome profile on a real repository.
+
+## Guidelines
+
+- **Keep calculations pure.** Put logic in `src/core/` with unit tests; reports in `src/background/reports/` only fetch and normalize.
+- **Support both paths.** If you change a report, update both the REST (anonymous) and GraphQL (signed-in) functions and their tests in `tests/unit/reports.test.ts`.
+- **Never show unavailable evidence as zero.** Use `null` and a warning.
+- **Respect the request budget.** Anonymous users have 60 requests per hour. Note the cost of new requests in your PR.
+- **Keep the CONTRI glass look.** Reuse the existing classes and colors in `src/content/widget.css`; both light and dark variants should look like the same product.
+- **Accessibility:** keyboard access, visible focus, readable contrast, reduced motion.
+- **Privacy:** no analytics, no new hosts, no remote code. Never commit tokens or personal data, and never put a token in screenshots or logs.
+
+## Pull request description
+
+Say what changed and why, what you verified (commands, browsers, repositories), and any limitations. The template will prompt you.

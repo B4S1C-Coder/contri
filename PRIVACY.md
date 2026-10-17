@@ -1,27 +1,51 @@
 # CONTRI privacy and permissions
 
-CONTRI is a public GitHub companion with no backend or analytics. Its floating widget runs only on github.com. It reads the repository path currently displayed to retrieve public evidence; it does not persist tab URLs or browsing history.
+CONTRI has no backend and no analytics. It reads public GitHub data from your browser and keeps everything else on your device.
 
-Public API requests go to api.github.com. GitHub receives ordinary request metadata, including your IP address. Requests omit browser cookies. Optional tokens are sent to GitHub in the Authorization header by the background worker only.
+## What it reads
 
-## Optional GitHub token
+The extension runs on github.com. It reads the repository and issue number in the current page's URL to fetch public evidence from `api.github.com`. It does not store your browsing history. GitHub receives ordinary request metadata (such as your IP address); requests never include your GitHub cookies.
 
-Enter a token only in the extension-owned Settings page. Session storage is the default and is cleared when the browser closes. **Remember on this device** retains the token in extension-local storage until you disconnect or uninstall. This storage is not an encrypted password vault. Token storage is restricted to trusted extension contexts; page content scripts receive only public reports and connection status, never the token.
+Only public repositories are analyzed, even if your sign-in could see more. Private cross-references are filtered out.
 
-Disconnect removes the token. Revoke a token in GitHub settings if you want to invalidate it at GitHub as well. Only public repositories are supported, even if a token has broader permissions. No write permissions are needed.
+## Signing in
 
-## Local data
+- **Sign in with GitHub (device flow):** you approve a code on github.com. CONTRI receives a token with no scopes (public, read-only access) directly from GitHub. Your password never touches CONTRI.
+- **Personal access token:** entered only on the extension's own Settings page.
 
-Up to 100 public result sections are cached for 15 minutes. Incomplete sections are not retained as fresh reports. Clear cached reports in Settings to remove report data. Widget position is stored locally. Uninstalling removes extension storage. Fonts and icons are bundled.
+By default the token is kept in session storage and forgotten when the browser closes. “Stay signed in” keeps it in extension-local storage until you sign out or uninstall; this is not an encrypted vault. Both storage areas are restricted to trusted extension contexts, so scripts running on GitHub pages cannot read the token. It is sent only to `api.github.com`. Sign out in Settings, and revoke access at https://github.com/settings/applications (OAuth) or https://github.com/settings/personal-access-tokens (tokens).
 
-Permissions: `storage` retains local settings and reports; `scripting` and `activeTab` allow toolbar recovery on GitHub; host permissions are github.com for the widget and api.github.com for public requests. No all-sites access is requested.
+## On-device AI
 
-The launch website is static, has no analytics, does not accept tokens, and uses explicitly fictional demo numbers.
+“Summarize the thread” and “How do I start?” use Chrome's built-in model (Gemini Nano), which runs locally. The issue text is processed on your device and is not sent to CONTRI or to an AI service. Chrome may download the model once; that download is managed by Chrome. Nothing runs until you click.
 
-## Shortlist and AI handoff
+## Stored on your device
 
-Only projects and issues you explicitly save enter the local shortlist (up to 50 items), along with notes you choose to write. This is separate from automatic report caching. Remove saved items in My shortlist; uninstalling clears all extension data.
+- Cached public reports (up to 80, expiring after 10 minutes to 24 hours) and maintainer rosters (7 days). Clear them in Settings.
+- Your shortlist and notes (up to 50 items), and watched issues (up to 10).
+- Preferences and widget position.
 
-Contribution briefs are assembled locally from public issue metadata, evidence links, and any completed checks. CONTRI does not call an AI API or read AI chat accounts. Clicking Copy brief places the previewed text on your clipboard. Opening ChatGPT, Claude, or Grok opens that provider's homepage without putting the brief in its URL. If you paste it there, the provider processes it under its own terms and privacy policy. No AI subscription, token, or password is collected by CONTRI.
+Uninstalling removes all of it.
 
-CONTRI does not sell user data, use it for advertising or credit decisions, or transfer it beyond the disclosed functionality. Contact the developer through https://github.com/alphasafal/contri/issues for privacy questions without posting credentials or sensitive content.
+## Notifications
+
+If you watch an issue, CONTRI checks it about once an hour and shows a system notification when something useful changes. Turn notifications off in Settings, or stop watching.
+
+## Permissions
+
+| Permission                 | Why                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `storage`                  | preferences, cached reports, shortlist, watched issues, optional sign-in           |
+| `scripting`                | show CONTRI when the toolbar button is clicked on a tab opened before installation |
+| `alarms`                   | hourly checks of watched issues                                                    |
+| `notifications`            | tell you when a watched issue changes                                              |
+| `https://github.com/*`     | show the launcher and badges; also used for the device-flow sign-in endpoints      |
+| `https://api.github.com/*` | read public repository evidence                                                    |
+
+No all-sites access. No remote code: all JavaScript and fonts ship in the package.
+
+## AI chat handoff
+
+The contribution brief is assembled locally. **Copy brief** puts it on your clipboard; the ChatGPT, Claude and Gemini links open those sites without the brief. If you paste it there, that provider's terms apply.
+
+CONTRI does not sell data, use it for advertising or credit decisions, or transfer it beyond what is described here. Questions: https://github.com/alphasafal/contri/issues (never post tokens or personal data).

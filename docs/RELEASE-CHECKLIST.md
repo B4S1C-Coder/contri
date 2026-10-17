@@ -1,34 +1,27 @@
-# Release acceptance
+# Release checklist
 
-Record results and browser/build version in VERIFICATION.md. Do not equate a source test or website demo with installed-extension evidence.
+## Automated (CI does these on every push)
 
-## Automated
+- [ ] `npm run check` — Prettier, ESLint, unit tests, build
+- [ ] `npm run test:e2e` — installed extension in Chromium against the mock GitHub
+- [ ] `npm run package && npm run verify:package` — permissions, files, size, no dynamic code
+- [ ] CodeQL clean
 
-- [ ] Clean npm ci, npm test, npm run package
-- [ ] npm audit; review any findings
-- [ ] ZIP manifest at root; no credentials, source maps, caches or unrelated files
-- [ ] CI green on exact release commit
+## Manual, in a real Chrome profile
 
-## Installed Chrome
+- [ ] Fresh install opens the welcome page; sign in with GitHub (device flow) and with a token; sign out
+- [ ] Launcher on repository pages; widget opens, drags, minimizes, resets; toolbar button toggles it
+- [ ] Issue badge on a real issue in light and dark GitHub themes; repository About badge
+- [ ] SPA navigation: repository → issues → issue → back; no duplicate widgets
+- [ ] Team analysis on an active and a quiet repository; archived and fork notes
+- [ ] Issues: “First contribution” preset, bulk linked-PR check when signed in, per-issue checks anonymously
+- [ ] On-device AI on a Chrome with built-in AI; fallback text elsewhere
+- [ ] Watch an issue; notification after a change (use a test repository)
+- [ ] Rate-limit message when anonymous capacity runs out
 
-- [ ] Load current dist; no service worker or content errors
-- [ ] Auto-detection, SPA navigation, back/forward, quick repository switching
-- [ ] No duplicate widget; drag, keyboard movement, reset, close, toolbar reopen
-- [ ] Minimize/restore; narrow viewport; light and dark GitHub; reduced motion
-- [ ] Public active/quiet/archived/fork repositories; private rejection
-- [ ] Live sample and source links agree for several public repositories
-- [ ] Issue references open/draft/closed/merged; incomplete checks never clear
-- [ ] Actual discussion timestamps and coverage disclosure
-- [ ] Brief preview/copy/provider opening; no automatic AI transmission
-- [ ] Save note, remove item, compare; persistence after restart
-- [ ] Anonymous, invalid/expired token, valid token, disconnect, session expiry, optional persistence
-- [ ] Rate limit, partial failure, retry recovery, remaining capacity
-- [ ] Keyboard focus, scrolling and readable contrast
+## Publish
 
-## Publication
-
-- [ ] Confirm listing matches shipped behavior and required privacy categories
-- [ ] Add authentic installed screenshots and required promotional tile
-- [ ] Upload ZIP and checksum as a versioned release after acceptance
-- [ ] Complete developer registration and submit for review
-- [ ] Replace beta/install CTA with the actual Store URL only once approved
+1. Update `version` in `package.json` and `public/manifest.json`, and add a `CHANGELOG.md` entry at the top.
+2. Merge to `main`, then tag: `git tag v0.3.0 && git push origin v0.3.0`.
+3. The Release workflow builds the Chrome and Firefox packages and publishes a GitHub Release with the changelog entry. Set the repository variable `CONTRI_GITHUB_CLIENT_ID` first if the release should offer “Sign in with GitHub”.
+4. Upload the Chrome ZIP to the Chrome Web Store (see [STORE-SUBMISSION.md](STORE-SUBMISSION.md)).
