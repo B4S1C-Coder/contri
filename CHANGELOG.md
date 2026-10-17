@@ -6,7 +6,7 @@
 
 - Anonymous issue checks read the newest comments on threads with more than 300 comments, so a recent claim is no longer missed (it could show “Looks free” for an issue someone had just taken). Signed-in checks read the latest 50 timeline references instead of the first 50.
 - Missing data is never shown as inactivity: if merge activity can't be loaded, the Overview and the repository badge say so instead of “No human merges in the last four weeks”.
-- “Looks free” says when only part of a long discussion was checked for claims, and the comment count shows how many were really inspected.
+- “Looks free” says when only part of a long discussion was checked for claims, and the comment count shows how many were really inspected. If no comment could be loaded, the verdict is “Partly checked”, not green.
 - Sign in with GitHub stops with a clear message when GitHub reports an error polling cannot fix (for example device flow disabled), instead of waiting until the code expires.
 - A sign-in GitHub rejects (expired or revoked) is flagged, and Settings asks you to reconnect instead of showing “Signed in”.
 - Empty repositories are explained instead of “GitHub returned 409. Try again later”.
@@ -14,7 +14,7 @@
 
 **Security and privacy**
 
-- “Stay signed in” stores the token encrypted at rest (AES-GCM, non-extractable key), and only one copy is kept. 0.3.0 tokens are migrated automatically on first start.
+- “Stay signed in” stores the token encrypted at rest (AES-GCM, non-extractable key), so it is no longer in plain text, and only one copy is kept. 0.3.0 tokens are migrated automatically; a temporary storage error never deletes the sign-in or locks the extension.
 - Links built from API data must be `https:`; anything else is shown as text.
 - PRIVACY.md gains the Chrome Web Store Limited Use statement, a data-handled table and a changes section.
 - The release package check also rejects missing referenced files, remote code, source maps and credential-like strings. CI audits shipped dependencies.
@@ -22,8 +22,8 @@
 **Accessibility**
 
 - All measured text meets WCAG AA contrast in light and dark mode; same teal glass, slightly more opaque.
-- Escape minimizes the panel and returns focus to the launcher; the panel is a labelled region.
-- Failed requests offer “Try again”.
+- Escape minimizes the panel and returns focus to the launcher (in a text field it first leaves the field, keeping what you typed); the panel is a labelled region.
+- Failed requests offer “Try again”, and focus stays in the panel.
 - axe-core (WCAG 2.2 A/AA) runs on the installed extension in CI, plus a contrast audit over the glass.
 
 **Performance**
