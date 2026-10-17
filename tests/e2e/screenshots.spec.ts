@@ -1,16 +1,20 @@
 import { test, chromium, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
+import sharp from 'sharp';
 import { resolve } from 'node:path';
 import { startMockGitHub } from './mock-github';
 
 /**
- * Regenerates README / store screenshots (1280×800) and the social preview card
- * (1280×640) from the real built extension running on the GitHub-like mock pages.
+ * Regenerates README screenshots, the social preview card (1280×640) and the Chrome
+ * Web Store graphics (exact 1280×800 screenshots, 440×280 and 1400×560 promo images)
+ * from the real built extension running on the GitHub-like mock pages. The repository
+ * data shown is the mock's example data, not a real project.
  *   npm run build && npm run screenshots
  */
 test.skip(!process.env.CONTRI_SCREENSHOTS, 'Set CONTRI_SCREENSHOTS=1 to regenerate docs/assets screenshots.');
 
 const OUT = resolve('docs/assets');
+const STORE = resolve('docs/store');
 const DIST = resolve('dist');
 
 test('README screenshots and social card', async () => {
@@ -96,6 +100,34 @@ test('README screenshots and social card', async () => {
     </div></body></html>`);
   await card.waitForTimeout(400);
   await card.screenshot({ path: `${OUT}/social-preview.png` });
+
+  // 6. Chrome Web Store: screenshots must be exactly 1280×800; promo images avoid text.
+  mkdirSync(STORE, { recursive: true });
+  const store = [
+    ['screenshot-issue', 'screenshot-1-issue-availability'],
+    ['screenshot-overview', 'screenshot-2-project-activity'],
+    ['screenshot-team', 'screenshot-3-team-replies'],
+    ['screenshot-dark', 'screenshot-4-dark-mode'],
+  ];
+  for (const [from, to] of store)
+    await sharp(`${OUT}/${from}.png`).resize(1280, 800).png().toFile(`${STORE}/${to}.png`);
+  const symbol = `<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="44" stroke="#f3f6ee" stroke-opacity=".62" stroke-width="5"/><path d="M30 81 74 15M55 20.5l19-5.5 2 19" stroke="#f3f6ee" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const promo = async (width: number, height: number, name: string) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width, height });
+    const panel = Math.round(height * 0.86);
+    await page.setContent(`<!doctype html><body style="margin:0"><div style="width:${width}px;height:${height}px;
+      display:flex;align-items:center;justify-content:space-evenly;overflow:hidden;
+      background:linear-gradient(125deg,#3f5b5c,#2b4442 55%,#4a5f4f)">
+      <div style="width:${Math.round(height * 0.5)}px;height:${Math.round(height * 0.5)}px">${symbol}</div>
+      <img src="data:image/png;base64,${widget.toString('base64')}" style="height:${panel}px;border-radius:${Math.round(panel / 22)}px;box-shadow:0 20px 50px #0c1f1d80" />
+    </div></body>`);
+    await page.waitForTimeout(300);
+    await sharp(await page.screenshot()).resize(width, height).png().toFile(`${STORE}/${name}.png`);
+    await page.close();
+  };
+  await promo(440, 280, 'promo-small-440x280');
+  await promo(1400, 560, 'promo-marquee-1400x560');
 
   await context.close();
   await mock.close();
