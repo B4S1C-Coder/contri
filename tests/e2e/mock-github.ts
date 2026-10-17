@@ -266,6 +266,8 @@ export function startMockGitHub(port: number) {
   const requests: string[] = [];
   /** Injected API failures: the next `times` requests whose path equals `path` get `status`. */
   const failures: Array<{ path: string; status: number; times: number }> = [];
+  /** Client IDs that asked for a device code. */
+  const deviceRequests: string[] = [];
   const server = createServer(
     { key: readFileSync(join(dir, 'key.pem')), cert: readFileSync(join(dir, 'cert.pem')) },
     (req: IncomingMessage, res: ServerResponse) => {
@@ -310,6 +312,28 @@ export function startMockGitHub(port: number) {
           return send(404, JSON.stringify({ message: 'Not Found' }), 'application/json', limits);
         return send(200, JSON.stringify(value), 'application/json', limits);
       }
+      // GitHub's OAuth device flow (github.com/login/...): one code, approved on the first poll.
+      if (req.method === 'POST' && url.pathname === '/login/device/code') {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          const clientId = new URLSearchParams(body).get('client_id');
+          deviceRequests.push(clientId ?? '');
+          send(
+            200,
+            JSON.stringify({
+              device_code: 'mock-device-code',
+              user_code: 'WDJB-MJHT',
+              verification_uri: 'https://github.com/login/device',
+              expires_in: 900,
+              interval: 5,
+            }),
+          );
+        });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/login/oauth/access_token')
+        return send(200, JSON.stringify({ access_token: 'gho_mock_device_token', token_type: 'bearer', scope: '' }));
       if (url.pathname === `/${REPO}`) return send(200, repoPage(), 'text/html');
       const issue = /^\/acme\/widgets\/issues\/(\d+)$/.exec(url.pathname);
       if (issue) return send(200, issuePage(Number(issue[1])), 'text/html');
@@ -320,6 +344,7 @@ export function startMockGitHub(port: number) {
   server.listen(port);
   return {
     requests,
+    deviceRequests,
     fail: (path: string, status: number, times = 1) => failures.push({ path, status, times }),
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };

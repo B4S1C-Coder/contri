@@ -70,6 +70,15 @@ for (const [name, data] of Object.entries(files)) {
   );
 }
 
+// "Sign in with GitHub" needs the OAuth App's (public) client ID in the bundled scripts.
+if (!process.env.CONTRI_ALLOW_NO_OAUTH)
+  assert.ok(
+    Object.entries(files).some(
+      ([name, data]) => name.endsWith('.js') && /Ov23li[A-Za-z0-9]{14}|Iv1\.[a-f0-9]{16}/.test(strFromU8(data)),
+    ),
+    'the package has no GitHub OAuth client ID: "Sign in with GitHub" would be missing (set CONTRI_ALLOW_NO_OAUTH=1 for a token-only build)',
+  );
+
 const widgetKb = files['widget.js'].length / 1024;
 assert.ok(widgetKb < 150, `widget.js is ${widgetKb.toFixed(0)} KB; it runs on every GitHub page, keep it under 150 KB`);
 assert.ok(!strFromU8(files['widget.js']).includes('data:font/'), 'fonts must not be inlined into widget.js');

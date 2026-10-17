@@ -6,7 +6,7 @@ The code-side checks pass on the release build (see [RELEASE-CHECKLIST.md](RELEA
 
 **Upload this file:** `contri-v<version>.zip` from the GitHub release (not the `-firefox` zip, not "Source code"). `manifest.json` is at its root and `npm run verify:package` checks it.
 
-**Before that release is built**, set the repository variable `CONTRI_GITHUB_CLIENT_ID` (Settings → Secrets and variables → Actions → Variables) to the client ID of a GitHub OAuth App with device flow enabled. Without it the ZIP only offers token sign-in, and the listing's “Sign in with GitHub” would be inaccurate. After installing the ZIP, check that Settings shows **Sign in with GitHub**. A ZIP built locally without `.env` has no client ID and must not be uploaded.
+**Sign in with GitHub** uses the CONTRI OAuth App (owned by @alphasafal, device flow, no scopes), built into every release; the package check fails without it. After installing the ZIP, Settings shows **Sign in with GitHub**.
 
 ## 1. Name
 

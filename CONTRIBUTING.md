@@ -12,7 +12,7 @@ Thanks for helping make open source easier to join. Small, focused pull requests
 1. Fork and clone the repository. Use Node.js 24 (`.nvmrc`).
 2. `npm ci`
 3. `npm run build`, then load `dist` with **Load unpacked** in `chrome://extensions`.
-4. Optional: add `VITE_GITHUB_CLIENT_ID` to `.env` to test “Sign in with GitHub” (see README).
+4. “Sign in with GitHub” works out of the box with the CONTRI OAuth App; see the README to use your own.
 
 ## Before opening a pull request
 

@@ -87,18 +87,19 @@ Then **Load unpacked** → `dist`. After pulling changes, rebuild, click **Reloa
 
 Anonymous mode works within GitHub's limit of **60 requests per hour**. Signing in raises it to **5,000** and switches CONTRI to GitHub's GraphQL API, so most checks take one request instead of dozens.
 
-- **Sign in with GitHub** uses the OAuth device flow: you get a short code, approve it on github.com, done. No password or token ever passes through CONTRI, and no scopes are requested (public, read-only access). Builds need a client ID — see below.
+- **Sign in with GitHub** uses the OAuth device flow with the CONTRI OAuth App: you get a short code, approve it on github.com, done. No password ever passes through CONTRI, and no scopes are requested (public, read-only access).
 - **Personal access token**: Settings walks you through creating a fine-grained, read-only token for public repositories.
 
 The sign-in is kept in memory until the browser closes unless you choose “Stay signed in”, which stores it encrypted (AES-GCM). Either way it lives where GitHub pages cannot read it and is only ever sent to `api.github.com`. If GitHub rejects it (expired or revoked), Settings asks you to reconnect.
 
-### Configuring “Sign in with GitHub” for your build
+### “Sign in with GitHub” in your own build
 
-1. On GitHub: **Settings → Developer settings → OAuth Apps → New OAuth App**. Any homepage URL works (e.g. the repository); the callback URL is not used.
-2. Tick **Enable Device Flow** and save. Copy the **Client ID** (it is public by design; there is no secret).
-3. Create `.env` with `VITE_GITHUB_CLIENT_ID=<your client id>` and run `npm run build`.
+Every build uses the CONTRI OAuth App (client ID in `src/shared/config.ts`; client IDs are public and the device flow has no secret). A fork that wants its own app:
 
-Without a client ID, Settings shows only the token option.
+1. On GitHub: **Settings → Developer settings → OAuth Apps → New OAuth App**. Use your homepage as the callback URL (it is not used), tick **Enable Device Flow**, and leave **Expire user access tokens** off.
+2. Copy the **Client ID** and build with `VITE_GITHUB_CLIENT_ID=<your client id> npm run build` (or put it in `.env`).
+
+`VITE_GITHUB_CLIENT_ID=none` builds a version that offers only the token option.
 
 ## Request budget
 
@@ -166,7 +167,7 @@ Every number links to its evidence. Unavailable data is shown as “—”, neve
 | “Not found on GitHub”                             | The repository is private, renamed or deleted. CONTRI only reads public repositories.                                           |
 | A badge is missing on an issue page               | GitHub may have changed its layout. The panel still works; please [open an issue](https://github.com/alphasafal/contri/issues). |
 | Numbers look stale                                | Use ↻ in the panel to refresh, or Settings → Clear cached reports.                                                              |
-| “Sign in with GitHub” is missing                  | The build has no OAuth client ID. Use a token, or see “Configuring Sign in with GitHub” above.                                  |
+| “Sign in with GitHub” is missing                  | The build was made with `VITE_GITHUB_CLIENT_ID=none`. Use a token, or the official release.                                     |
 
 ## Contributing
 

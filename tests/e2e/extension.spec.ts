@@ -79,7 +79,7 @@ test('signing in with a token switches to GraphQL and badges check automatically
 }) => {
   const settings = await context.newPage();
   await settings.goto(`chrome-extension://${extensionId}/settings.html`);
-  await expect(settings.getByText('Connect with a personal access token')).toBeVisible();
+  await settings.getByText('Use a personal access token instead').click();
   await settings.locator('#token').fill('github_pat_e2e');
   await settings.getByRole('button', { name: 'Connect token' }).click();
   await expect(settings.getByText(/Signed in as @tester/)).toBeVisible();
@@ -156,6 +156,7 @@ test('a remembered sign-in is stored encrypted and still works', async ({ contex
   const settings = await context.newPage();
   await settings.goto(`chrome-extension://${extensionId}/settings.html`);
   await settings.getByLabel('Stay signed in on this device').check();
+  await settings.getByText('Use a personal access token instead').click();
   await settings.locator('#token').fill('github_pat_remembered_e2e');
   await settings.getByRole('button', { name: 'Connect token' }).click();
   await expect(settings.getByText(/remembered on this device/)).toBeVisible();
@@ -167,6 +168,24 @@ test('a remembered sign-in is stored encrypted and still works', async ({ contex
   expect(JSON.stringify(stored)).not.toContain('github_pat_remembered_e2e');
   expect(stored.local.githubCredential).toMatchObject({ v: 1 });
   expect(stored.session.githubCredential).toBeUndefined();
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets/issues/7');
+  await expect(page.locator('#contri-issue-badge button')).toContainText('Open PR #12');
+  expect(mock.requests.some((r) => r.includes('POST /graphql'))).toBe(true);
+});
+
+test('Sign in with GitHub (device flow) with the CONTRI OAuth App', async ({ context, extensionId, mock }) => {
+  const settings = await context.newPage();
+  await settings.goto(`chrome-extension://${extensionId}/settings.html`);
+  const verification = context.waitForEvent('page');
+  await settings.getByRole('button', { name: 'Sign in with GitHub' }).click();
+  // The user sees the code to type on github.com, and GitHub's page opens in a new tab.
+  await expect(settings.locator('.cc-code')).toHaveText('WDJB-MJHT');
+  expect((await verification).url()).toBe('https://github.com/login/device');
+  expect(mock.deviceRequests).toEqual(['Ov23liqTB6n54MCQKWzi']);
+  // After the first poll (5 s, GitHub's minimum interval) the sign-in completes.
+  await expect(settings.getByText(/Signed in as @tester/)).toBeVisible({ timeout: 15_000 });
+  await expect(settings.getByText(/GitHub sign-in/)).toBeVisible();
   const page = await context.newPage();
   await page.goto('https://github.com/acme/widgets/issues/7');
   await expect(page.locator('#contri-issue-badge button')).toContainText('Open PR #12');

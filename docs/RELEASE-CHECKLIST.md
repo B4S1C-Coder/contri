@@ -33,5 +33,5 @@
 
 1. Update `version` in `package.json` and `public/manifest.json`, and add a `CHANGELOG.md` entry at the top.
 2. Merge to `main`. The Release workflow sees a version with no release yet, builds and verifies the Chrome and Firefox packages, creates the `v<version>` tag and publishes a GitHub Release with the changelog entry. (Pushing a `v<version>` tag or running the workflow from the Actions tab does the same.)
-3. Set the repository variable `CONTRI_GITHUB_CLIENT_ID` **before** merging, so the release ZIP offers “Sign in with GitHub” (the Store listing mentions it). Install the release ZIP and confirm Settings shows the button.
+3. “Sign in with GitHub” uses the CONTRI OAuth App built into the code; `verify:package` fails if a release has no client ID. Install the release ZIP and confirm Settings shows the button. (The optional repository variable `CONTRI_GITHUB_CLIENT_ID` overrides it.)
 4. Upload the Chrome ZIP to the Chrome Web Store (see [STORE-SUBMISSION.md](STORE-SUBMISSION.md)).

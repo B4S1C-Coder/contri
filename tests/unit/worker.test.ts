@@ -293,6 +293,21 @@ describe('sign-in', () => {
   });
 });
 
+describe('OAuth app configuration', () => {
+  it('uses the CONTRI OAuth App by default and lets a build override or disable it', async () => {
+    expect((await import('../../src/shared/config')).GITHUB_CLIENT_ID).toBe('Ov23liqTB6n54MCQKWzi');
+    vi.resetModules();
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', 'Ov23lifork');
+    expect((await import('../../src/shared/config')).GITHUB_CLIENT_ID).toBe('Ov23lifork');
+    vi.resetModules();
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', 'none');
+    expect((await import('../../src/shared/config')).GITHUB_CLIENT_ID).toBe('');
+    vi.resetModules();
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', '');
+    expect((await import('../../src/shared/config')).GITHUB_CLIENT_ID).toBe('Ov23liqTB6n54MCQKWzi');
+  });
+});
+
 describe('sign-in resilience', () => {
   beforeEach(() => {
     installChrome();
