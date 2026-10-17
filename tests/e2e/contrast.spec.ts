@@ -55,6 +55,9 @@ async function measure(page: Page, rootSel: string): Promise<string[]> {
         const cs = getComputedStyle(el);
         if (cs.visibility === 'hidden' || cs.display === 'none') continue;
         if ((el as HTMLButtonElement).disabled) continue;
+        // Not painted (inside a closed <details>, content-visibility, opacity 0): nothing to measure.
+        if (!el.checkVisibility({ contentVisibilityAuto: true, opacityProperty: true, visibilityProperty: true }))
+          continue;
         // Only text actually visible inside every scrolling ancestor.
         let clip: Element | null = el.parentElement;
         let visible = true;
@@ -178,4 +181,7 @@ test('text in the badge, every panel section and Settings meets WCAG AA contrast
   await settings.goto(`chrome-extension://${extensionId}/settings.html`);
   await settings.waitForTimeout(800);
   expect(await measure(settings, 'body'), 'settings').toEqual([]);
+  await settings.getByText('Use a personal access token instead').click();
+  await settings.waitForTimeout(300);
+  expect(await measure(settings, 'body'), 'settings with the token form open').toEqual([]);
 });
