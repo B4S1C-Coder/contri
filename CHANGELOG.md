@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.2 — Sign in with GitHub
+
+**New**
+
+- **Sign in with GitHub** works out of the box: the CONTRI OAuth App (device flow, no scopes, read-only public access, tokens that don't expire) is built into every release. You get a short code, approve it on github.com, and CONTRI switches to 5,000 requests an hour. The personal access token option is still there.
+
+**Changed**
+
+- Forks can use their own OAuth App with `VITE_GITHUB_CLIENT_ID`, or `none` for token-only builds.
+- The release package check fails if the OAuth client ID is missing.
+
 ## 0.3.1 — release hardening
 
 **Fixed**
