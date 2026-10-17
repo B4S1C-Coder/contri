@@ -73,6 +73,11 @@ export function activity(merges: Merge[], now: Date) {
   return { merged: human.length, authors: authors.size, weeks, from: new Date(start).toISOString() };
 }
 
+/** Human merges in the last four weeks, or null when the merge sample could not be loaded. */
+export function recentMerges(sample: { available: boolean; weeks: Week[] }): number | null {
+  return sample.available ? sample.weeks.slice(-4).reduce((n, w) => n + w.count, 0) : null;
+}
+
 export type Timing = {
   sampled: number;
   answered: number;

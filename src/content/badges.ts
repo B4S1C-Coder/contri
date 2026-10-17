@@ -1,4 +1,5 @@
 import type { InsightReport } from '../background/reports/insight';
+import { recentMerges } from '../core/metrics';
 import { verdict, type Verdict } from '../core/verdict';
 import { count, hours } from '../shared/format';
 import { call, peek, type BadgeMode } from '../shared/protocol';
@@ -132,7 +133,12 @@ function issueBadge(repo: string, number: number, settings: Settings, state: Map
   anchor.insertAdjacentElement('afterend', badge.host);
 
   const show = (report: InsightReport) => {
-    const v = verdict({ issueState: report.issue.state, link: report.link, claim: report.claim });
+    const v = verdict({
+      issueState: report.issue.state,
+      link: report.link,
+      claim: report.claim,
+      commentsComplete: report.discussion.complete,
+    });
     render(badge.button, { tone: v.tone, label: v.label, detail: 'Open details', title: v.detail });
     badge.button.onclick = openWidget;
   };
@@ -202,7 +208,7 @@ function repoBadge(repo: string, settings: Settings) {
         : null;
     if (median != null) parts.push(`team replies ~${hours(median)}`);
     if (!parts.length) return;
-    const recent = overview ? overview.sample.weeks.slice(-4).reduce((n, w) => n + w.count, 0) : null;
+    const recent = overview ? recentMerges(overview.sample) : null;
     render(badge.button, {
       tone: recent === null ? undefined : recent > 0 ? 'good' : 'warn',
       label: parts[0],

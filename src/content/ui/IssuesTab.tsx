@@ -63,7 +63,12 @@ function IssueCard({
       </small>
       {report && !open && (
         <VerdictPill
-          verdict={verdict({ issueState: report.issue.state, link: report.link, claim: report.claim })}
+          verdict={verdict({
+            issueState: report.issue.state,
+            link: report.link,
+            claim: report.claim,
+            commentsComplete: report.discussion.complete,
+          })}
           compact
         />
       )}

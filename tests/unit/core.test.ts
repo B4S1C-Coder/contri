@@ -8,6 +8,7 @@ import {
   hasNextIssuePage,
   linkState,
   needsLinkCheck,
+  recentMerges,
   timing,
   type Reply,
   type Thread,
@@ -32,6 +33,15 @@ describe('repository parsing', () => {
     expect(parsePage('https://github.com/a/b')).toEqual({ repo: 'a/b', issue: null, pull: null });
     expect(parsePage('https://github.com/a/b/issues/new').issue).toBeNull();
     expect(parsePage('https://github.com/notifications').repo).toBeNull();
+  });
+});
+
+describe('recent merges', () => {
+  it('never turns a missing merge sample into zero', () => {
+    const weeks = Array.from({ length: 13 }, (_, i) => ({ from: '', count: i >= 11 ? 2 : 1 }));
+    expect(recentMerges({ available: true, weeks })).toBe(6);
+    expect(recentMerges({ available: true, weeks: weeks.map((w) => ({ ...w, count: 0 })) })).toBe(0);
+    expect(recentMerges({ available: false, weeks: weeks.map((w) => ({ ...w, count: 0 })) })).toBeNull();
   });
 });
 

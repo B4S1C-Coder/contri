@@ -14,8 +14,10 @@ export function verdict(input: {
   issueState: string;
   link: { state: LinkState; prs: LinkedPR[] };
   claim: ClaimStatus;
+  /** False when only part of a long discussion was checked for claims. */
+  commentsComplete?: boolean;
 }): Verdict {
-  const { issueState, link, claim } = input;
+  const { issueState, link, claim, commentsComplete = true } = input;
   if (issueState.toLowerCase() !== 'open') return { tone: 'busy', label: 'Closed', detail: 'This issue is closed.' };
   const open = link.prs.find((p) => p.state === 'open');
   if (open)
@@ -38,6 +40,8 @@ export function verdict(input: {
   return {
     tone: 'good',
     label: 'Looks free',
-    detail: 'No assignee, no claim and no linked open pull request found. Say hello in the thread before you start.',
+    detail: `No assignee, no claim and no linked open pull request found.${
+      commentsComplete ? '' : ' Only the latest comments were checked for claims.'
+    } Say hello in the thread before you start.`,
   };
 }

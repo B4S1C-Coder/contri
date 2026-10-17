@@ -1,5 +1,6 @@
 import type { Repo } from '../../background/reports/repo';
 import type { OverviewReport } from '../../background/reports/overview';
+import { recentMerges } from '../../core/metrics';
 import { count, hours, time } from '../../shared/format';
 import { Checked, Ext, Loading, Note, Observed, Stat, Warnings } from './common';
 import { useRequest } from './hooks';
@@ -35,7 +36,7 @@ function Chart({ data }: { data: OverviewReport['sample'] }) {
 }
 
 function Activity({ data, onRefresh, busy }: { data: OverviewReport; onRefresh: () => void; busy: boolean }) {
-  const recent = data.sample.weeks.slice(-4).reduce((n, w) => n + w.count, 0);
+  const recent = recentMerges(data.sample);
   return (
     <>
       <div className="cc-metrics">
@@ -53,8 +54,12 @@ function Activity({ data, onRefresh, busy }: { data: OverviewReport; onRefresh: 
           label="Commits · 90d"
         />
       </div>
-      <div className={`cc-signal ${recent ? 'cc-tone-good' : 'cc-tone-warn'}`}>
-        {recent ? `${recent} human merges in the last four weeks.` : 'No human merges observed in the last four weeks.'}
+      <div className={`cc-signal ${recent === null ? '' : recent ? 'cc-tone-good' : 'cc-tone-warn'}`}>
+        {recent === null
+          ? 'Recent merge activity could not be loaded. See the notes below.'
+          : recent
+            ? `${recent} human merges in the last four weeks.`
+            : 'No human merges observed in the last four weeks.'}
       </div>
       {data.sample.available && <Chart data={data.sample} />}
       <div className="cc-facts">

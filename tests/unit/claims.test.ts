@@ -120,5 +120,16 @@ describe('verdict', () => {
     expect(verdict({ issueState: 'open', link: { state: 'incomplete', prs: [] }, claim: none }).tone).toBe('unknown');
     const free = verdict({ issueState: 'OPEN', link: { state: 'clear', prs: [] }, claim: none });
     expect(free).toMatchObject({ tone: 'good', label: 'Looks free' });
+    expect(free.detail).not.toMatch(/latest comments/);
+  });
+  it('says when only part of a long discussion was checked for claims', () => {
+    const partial = verdict({
+      issueState: 'open',
+      link: { state: 'clear', prs: [] },
+      claim: none,
+      commentsComplete: false,
+    });
+    expect(partial.label).toBe('Looks free');
+    expect(partial.detail).toMatch(/Only the latest comments were checked for claims/);
   });
 });

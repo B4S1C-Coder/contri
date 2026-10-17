@@ -23,7 +23,12 @@ export function IssueInsight({
   busy?: boolean;
 }) {
   const [digest, setDigest] = useState('');
-  const v = verdict({ issueState: report.issue.state, link: report.link, claim: report.claim });
+  const v = verdict({
+    issueState: report.issue.state,
+    link: report.link,
+    claim: report.claim,
+    commentsComplete: report.discussion.complete,
+  });
   const { issue, link, claim, discussion } = report;
   return (
     <div className="cc-insight">
@@ -58,7 +63,7 @@ export function IssueInsight({
       <Observed event={discussion.latest} label="Latest human comment" />
       <p className="cc-caption">
         {plural(discussion.teamComments, 'team comment')} · {plural(issue.comments, 'comment')} in total
-        {discussion.complete ? '' : ' (latest 100 inspected)'}
+        {discussion.complete ? '' : ` (latest ${discussion.inspected} inspected)`}
       </p>
       <AiPanel text={report.thread.text} truncated={report.thread.truncated} onDigest={setDigest} />
       <div className="cc-actions cc-actions-inline">
