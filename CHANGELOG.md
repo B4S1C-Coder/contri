@@ -11,6 +11,7 @@
 - A sign-in GitHub rejects (expired or revoked) is flagged, and Settings asks you to reconnect instead of showing “Signed in”.
 - Empty repositories are explained instead of “GitHub returned 409. Try again later”.
 - Hovering a cream button or the current tab no longer turns it into dark text on dark glass.
+- Arrows and stars are drawn as SVG icons in the extension and on the website, so they look the same on every device (phones used to show different glyphs or emoji).
 
 **Security and privacy**
 
