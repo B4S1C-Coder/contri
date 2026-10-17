@@ -34,7 +34,7 @@ button:focus-visible{outline:2px solid #fce9b6;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 `;
 
-type Settings = { mode: BadgeMode; signedIn: boolean };
+export type Settings = { mode: BadgeMode; signedIn: boolean };
 
 function createBadge(id: string) {
   const host = document.createElement('div');
@@ -220,6 +220,11 @@ function repoBadge(repo: string, settings: Settings) {
 
 /* ---------- lifecycle ---------- */
 
+/** Badges only exist on repository pages; everywhere else no timer runs at all. */
+export function needsBadgeTimer(settings: Settings | null, href: string): boolean {
+  return Boolean(settings && settings.mode !== 'off' && parsePage(href).repo);
+}
+
 export function startBadges(): () => void {
   const state = new Map<string, InsightReport | 'error'>();
   let settings: Settings | null = null;
@@ -244,8 +249,12 @@ export function startBadges(): () => void {
   // GitHub re-renders headers often; a cheap re-check re-attaches our badge without watching the DOM.
   const schedule = () => {
     if (timer) clearInterval(timer);
+    timer = undefined;
     tick();
-    timer = setInterval(tick, 2000);
+    if (needsBadgeTimer(settings, location.href))
+      timer = setInterval(() => {
+        if (!document.hidden) tick();
+      }, 2000);
   };
 
   void loadSettings()

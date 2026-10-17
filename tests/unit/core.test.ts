@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parsePage, parseRepo, safeHref } from '../../src/shared/repo';
+import { needsBadgeTimer } from '../../src/content/badges';
 import {
   activity,
   actor,
@@ -33,6 +34,18 @@ describe('repository parsing', () => {
     expect(parsePage('https://github.com/a/b')).toEqual({ repo: 'a/b', issue: null, pull: null });
     expect(parsePage('https://github.com/a/b/issues/new').issue).toBeNull();
     expect(parsePage('https://github.com/notifications').repo).toBeNull();
+  });
+});
+
+describe('badge timer', () => {
+  it('runs only on repository pages with badges enabled', () => {
+    const on = { mode: 'smart' as const, signedIn: false };
+    expect(needsBadgeTimer(on, 'https://github.com/acme/widgets/issues/7')).toBe(true);
+    expect(needsBadgeTimer(on, 'https://github.com/')).toBe(false);
+    expect(needsBadgeTimer(on, 'https://github.com/notifications')).toBe(false);
+    expect(needsBadgeTimer(on, 'https://github.com/settings/profile')).toBe(false);
+    expect(needsBadgeTimer({ ...on, mode: 'off' }, 'https://github.com/acme/widgets')).toBe(false);
+    expect(needsBadgeTimer(null, 'https://github.com/acme/widgets')).toBe(false);
   });
 });
 
