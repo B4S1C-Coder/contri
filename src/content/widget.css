@@ -92,9 +92,16 @@ select {
 .cc-settings a:hover {
   text-decoration: underline;
 }
-/* Zero specificity: a generic hover tint must never override cream buttons or the active tab. */
-.cc-widget :where(button:hover:not(:disabled)) {
+/*
+ * Same specificity as the base `.cc-widget button` rule (so it wins by order), and lower
+ * than cream buttons, the active tab and pressed presets, which keep their fill on hover.
+ */
+.cc-widget button:where(:hover:not(:disabled)) {
   background-color: #ffffff12;
+}
+/* The panel takes focus programmatically (Escape from a field, Try again); no ring needed there. */
+.cc-widget:focus {
+  outline: none;
 }
 .cc-widget :focus-visible,
 .cc-settings :focus-visible {

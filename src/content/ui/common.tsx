@@ -20,7 +20,16 @@ export function Note({
       <WarningIcon size={14} />
       <span>{children}</span>
       {onRetry && (
-        <button type="button" className="cc-retry" onClick={onRetry}>
+        <button
+          type="button"
+          className="cc-retry"
+          onClick={(e) => {
+            // The note disappears while retrying; keep keyboard focus inside the panel.
+            const panel = e.currentTarget.closest<HTMLElement>('.cc-widget');
+            onRetry();
+            panel?.focus();
+          }}
+        >
           Try again
         </button>
       )}

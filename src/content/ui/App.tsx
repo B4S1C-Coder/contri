@@ -83,12 +83,16 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
       className="cc-widget"
       role="region"
       aria-label="CONTRI"
+      tabIndex={-1}
       onKeyDown={(e) => {
-        // Escape minimizes the panel back to its launcher, like closing a popover.
-        if (e.key === 'Escape' && !e.defaultPrevented) {
-          e.preventDefault();
-          onMinimize();
-        }
+        if (e.key !== 'Escape' || e.defaultPrevented || e.nativeEvent.isComposing) return;
+        e.preventDefault();
+        // In a text field, Escape only leaves the field (nothing typed is lost); otherwise it
+        // minimizes the panel back to its launcher, like closing a popover.
+        const target = e.target as HTMLElement;
+        if (target.closest('input, textarea, select, [contenteditable="true"]'))
+          (e.currentTarget as HTMLElement).focus();
+        else onMinimize();
       }}
     >
       <GlassEffect />

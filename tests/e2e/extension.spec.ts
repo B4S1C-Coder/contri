@@ -115,6 +115,22 @@ test('Escape minimizes the panel and returns keyboard focus to the launcher', as
   await expect(page.getByRole('region', { name: 'CONTRI' })).toBeVisible();
 });
 
+test('Escape in a text field keeps the panel and what was typed', async ({ context, extensionId }) => {
+  void extensionId;
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets');
+  await page.locator('.cc-launcher').click();
+  await page.locator('.cc-nav button', { hasText: 'Discover' }).click();
+  const keyword = page.getByLabel('Keyword');
+  await keyword.fill('accessibility');
+  await keyword.press('Escape');
+  await expect(page.locator(widget)).toBeVisible();
+  await expect(keyword).toHaveValue('accessibility');
+  await expect(keyword).not.toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator(widget)).toHaveCount(0);
+});
+
 test('a failed request can be retried in place', async ({ context, extensionId, mock }) => {
   void extensionId;
   mock.fail('/repos/acme/widgets', 500);
@@ -122,8 +138,12 @@ test('a failed request can be retried in place', async ({ context, extensionId, 
   await page.goto('https://github.com/acme/widgets');
   await page.locator('.cc-launcher').click();
   await expect(page.locator('.cc-note')).toContainText('GitHub returned 500');
-  await page.getByRole('button', { name: 'Try again' }).click();
+  await page.getByRole('button', { name: 'Try again' }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.locator('.cc-widget h2')).toHaveText('widgets');
+  // Focus stayed inside the panel, so Escape still minimizes it.
+  await page.keyboard.press('Escape');
+  await expect(page.locator(widget)).toHaveCount(0);
 });
 
 test('a remembered sign-in is stored encrypted and still works', async ({ context, extensionId, mock }) => {
