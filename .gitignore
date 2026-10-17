@@ -9,3 +9,5 @@ coverage/
 *.zip.sha256
 !website/dist/
 !website/dist/**
+test-results/
+playwright-report/

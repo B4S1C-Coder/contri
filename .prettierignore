@@ -1,0 +1,8 @@
+dist
+website/dist
+package-lock.json
+*.zip
+*.sha256
+test-results
+playwright-report
+licenses
