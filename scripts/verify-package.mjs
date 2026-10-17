@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 /** Guards what ships to users: permissions, files, size, and no dynamic code. */
 const { version } = JSON.parse(await readFile('package.json', 'utf8'));
 const files = unzipSync(await readFile(`contri-v${version}.zip`));
+assert.ok(files['manifest.json'], 'manifest.json must be at the zip root');
 const manifest = JSON.parse(strFromU8(files['manifest.json']));
 
 assert.equal(manifest.version, version, 'manifest version matches package.json');
@@ -25,10 +26,48 @@ for (const f of [
   assert.ok(files[f], `${f} missing`);
 assert.ok(!files['preview.js'] && !files['index.html'], 'development preview must not ship');
 
+// Everything the manifest points at must be in the package (the Store rejects broken references).
+const referenced = [
+  manifest.background.service_worker,
+  manifest.options_page,
+  ...Object.values(manifest.icons),
+  ...Object.values(manifest.action?.default_icon ?? {}),
+  ...manifest.content_scripts.flatMap((c) => [...(c.js ?? []), ...(c.css ?? [])]),
+];
+for (const f of referenced) assert.ok(files[f], `manifest references ${f}, which is not in the package`);
+for (const { resources } of manifest.web_accessible_resources ?? [])
+  for (const pattern of resources) {
+    const re = new RegExp(`^${pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*')}$`);
+    assert.ok(
+      Object.keys(files).some((f) => re.test(f)),
+      `web_accessible_resources pattern ${pattern} matches nothing`,
+    );
+  }
+
+// Extension pages may only load bundled code (no remotely hosted code, MV3 policy).
+for (const [name, data] of Object.entries(files).filter(([n]) => n.endsWith('.html'))) {
+  const html = strFromU8(data);
+  for (const [, src] of html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"/g)) {
+    assert.ok(!/^(?:https?:)?\/\//.test(src), `${name} loads remote resource ${src}`);
+    const path = src.replace(/^\.?\//, '').split('?')[0];
+    assert.ok(files[path], `${name} references ${src}, which is not in the package`);
+  }
+}
+
 for (const [name, data] of Object.entries(files)) {
   assert.ok(!/(\.env|node_modules|\.map$|\.git\/)/.test(name), `unexpected file ${name}`);
-  if (name.endsWith('.js'))
-    assert.ok(!/\beval\s*\(|new Function\s*\(/.test(strFromU8(data)), `dynamic code in ${name}`);
+  if (!/\.(js|html|json|md|txt|css)$/.test(name)) continue;
+  const text = strFromU8(data);
+  if (name.endsWith('.js')) {
+    assert.ok(!/\beval\s*\(|new Function\s*\(/.test(text), `dynamic code in ${name}`);
+    assert.ok(!/\bimportScripts\s*\(|import\(\s*["'`]https?:/.test(text), `remote code loading in ${name}`);
+    assert.ok(!/sourceMappingURL=/.test(text), `source map reference in ${name}`);
+  }
+  // Credentials must never be bundled (a public OAuth client ID is fine; a secret or token is not).
+  assert.ok(
+    !/\bgh[pousr]_[A-Za-z0-9]{36}\b|github_pat_[A-Za-z0-9_]{40,}|client_secret\s*[:=]\s*["'][^"']+/.test(text),
+    `credential-like string in ${name}`,
+  );
 }
 
 const widgetKb = files['widget.js'].length / 1024;
@@ -36,5 +75,5 @@ assert.ok(widgetKb < 150, `widget.js is ${widgetKb.toFixed(0)} KB; it runs on ev
 assert.ok(!strFromU8(files['widget.js']).includes('data:font/'), 'fonts must not be inlined into widget.js');
 
 console.log(
-  `Verified ${Object.keys(files).length} files · MV3 permissions · widget.js ${widgetKb.toFixed(0)} KB · no preview, maps or dynamic code.`,
+  `Verified ${Object.keys(files).length} files · MV3 permissions · widget.js ${widgetKb.toFixed(0)} KB · all manifest and page references bundled · no remote code, maps, dynamic code or credentials.`,
 );
