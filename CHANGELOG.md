@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.3.1 — release hardening
+
+**Fixed**
+
+- Anonymous issue checks read the newest comments on threads with more than 300 comments, so a recent claim is no longer missed (it could show “Looks free” for an issue someone had just taken). Signed-in checks read the latest 50 timeline references instead of the first 50.
+- Missing data is never shown as inactivity: if merge activity can't be loaded, the Overview and the repository badge say so instead of “No human merges in the last four weeks”.
+- “Looks free” says when only part of a long discussion was checked for claims, and the comment count shows how many were really inspected.
+- Sign in with GitHub stops with a clear message when GitHub reports an error polling cannot fix (for example device flow disabled), instead of waiting until the code expires.
+- A sign-in GitHub rejects (expired or revoked) is flagged, and Settings asks you to reconnect instead of showing “Signed in”.
+- Empty repositories are explained instead of “GitHub returned 409. Try again later”.
+- Hovering a cream button or the current tab no longer turns it into dark text on dark glass.
+
+**Security and privacy**
+
+- “Stay signed in” stores the token encrypted at rest (AES-GCM, non-extractable key), and only one copy is kept. 0.3.0 tokens are migrated automatically on first start.
+- Links built from API data must be `https:`; anything else is shown as text.
+- PRIVACY.md gains the Chrome Web Store Limited Use statement, a data-handled table and a changes section.
+- The release package check also rejects missing referenced files, remote code, source maps and credential-like strings. CI audits shipped dependencies.
+
+**Accessibility**
+
+- All measured text meets WCAG AA contrast in light and dark mode; same teal glass, slightly more opaque.
+- Escape minimizes the panel and returns focus to the launcher; the panel is a labelled region.
+- Failed requests offer “Try again”.
+- axe-core (WCAG 2.2 A/AA) runs on the installed extension in CI, plus a contrast audit over the glass.
+
+**Performance**
+
+- The badge re-check no longer runs on GitHub pages without a repository or in hidden tabs. Measured on the GitHub dashboard over 20 s idle: script time 1.12 ms → 0 ms, task time 4.05 ms → 2.15 ms (no extension: 1.9 ms).
+
+**Docs and launch**
+
+- Chrome Web Store kit with copy-ready listing, permission and data declarations, reviewer steps and store graphics; known limitations and troubleshooting in the README; launch drafts and real first issues.
+
 ## 0.3.0 — contributor co-pilot
 
 **New**

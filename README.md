@@ -63,7 +63,7 @@ CONTRI follows GitHub's light or dark appearance with the same teal glass look.
 
 ### From a release (recommended)
 
-1. Download `contri-v0.3.0.zip` from the [latest release](https://github.com/alphasafal/contri/releases) and unzip it.
+1. Download `contri-v<version>.zip` (not “Source code”) from the [latest release](https://github.com/alphasafal/contri/releases) and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and choose the unzipped folder.
 4. A welcome page opens. Sign in with GitHub (or skip and use anonymous mode).
@@ -81,7 +81,7 @@ npm run build        # outputs dist/
 
 Then **Load unpacked** → `dist`. After pulling changes, rebuild, click **Reload** on the extension card and reload your GitHub tab.
 
-**Firefox (experimental):** `npm run package:firefox` creates `contri-v0.3.0-firefox.zip` for `about:debugging` → _Load Temporary Add-on_. On-device AI is Chrome-only.
+**Firefox (experimental):** `npm run package:firefox` creates `contri-v<version>-firefox.zip` for `about:debugging` → _Load Temporary Add-on_. On-device AI is Chrome-only.
 
 ## Signing in
 

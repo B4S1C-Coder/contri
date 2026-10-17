@@ -50,7 +50,7 @@ body:
     id: versions
     attributes:
       label: Browser and CONTRI version
-      placeholder: Chrome 141, CONTRI 0.3.0
+      placeholder: Chrome 141, CONTRI 0.3.1
     validations:
       required: true
   - type: textarea
