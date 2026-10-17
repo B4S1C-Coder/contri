@@ -58,3 +58,26 @@ test('hovering a cream button or the active tab keeps its cream fill', async ({ 
   await primary.hover();
   expect(await background('.cc-primary')).toBe('rgb(255, 252, 239)');
 });
+
+test('the panel stays on screen at small viewports and 200% zoom', async ({ context, extensionId }) => {
+  void extensionId;
+  // 640×400 is a 1280×800 window at 200% zoom (WCAG 1.4.4 / 1.4.10).
+  for (const [width, height] of [
+    [640, 400],
+    [400, 640],
+    [360, 560],
+  ]) {
+    const page = await context.newPage();
+    await page.setViewportSize({ width, height });
+    await page.goto('https://github.com/acme/widgets');
+    await page.locator('.cc-launcher').click();
+    await expect(page.locator('.cc-widget')).toBeVisible();
+    const box = (await page.locator('#contri-widget-root').boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    expect(box.y + box.height).toBeLessThanOrEqual(height);
+    await expect(page.getByRole('button', { name: 'Close CONTRI for this tab' })).toBeInViewport();
+    await page.close();
+  }
+});
