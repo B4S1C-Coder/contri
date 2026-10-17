@@ -128,6 +128,91 @@ describe('sign-in', () => {
     expect(await auth.getToken()).toBeUndefined();
   });
 
+  it('keeps a remembered token in exactly one storage area', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const auth = await import('../../src/background/auth');
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    await auth.connect('github_pat_session', false);
+    await auth.connect('github_pat_remembered', true);
+    expect(chrome.storage.local.dump().githubCredential).toBe('github_pat_remembered');
+    expect(chrome.storage.session.dump().githubCredential).toBeUndefined();
+    await auth.connect('github_pat_session2', false);
+    expect(chrome.storage.session.dump().githubCredential).toBe('github_pat_session2');
+    expect(chrome.storage.local.dump().githubCredential).toBeUndefined();
+    expect(await auth.connection()).toMatchObject({ remembered: false, connected: true });
+  });
+
+  it('removes the duplicate session copy left by 0.3.0 and survives a restart', async () => {
+    const chrome = globalThis.chrome as unknown as ReturnType<typeof installChrome>;
+    const meta = { login: 'safal', method: 'token' };
+    await chrome.storage.local.set({ githubCredential: 'tok', githubCredentialMeta: meta });
+    await chrome.storage.session.set({ githubCredential: 'tok', githubCredentialMeta: meta });
+    const auth = await import('../../src/background/auth');
+    expect(await auth.connection()).toMatchObject({ connected: true, remembered: true, login: 'safal' });
+    expect(chrome.storage.session.dump().githubCredential).toBeUndefined();
+    expect(await auth.getToken()).toBe('tok');
+  });
+
+  it('flags a credential GitHub rejects so Settings can ask to reconnect', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.connect('revoked', true);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ message: 'Bad credentials' }, 401)),
+    );
+    const transport = await import('../../src/background/transport');
+    await expect(transport.authenticatedFetch('https://api.github.com/repos/a/b')).rejects.toThrow(
+      /expired or was revoked/,
+    );
+    expect(await auth.connection()).toMatchObject({ connected: true, invalid: true });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    await auth.connect('fresh', true);
+    expect((await auth.connection()).invalid).toBe(false);
+  });
+
+  it('stops polling when GitHub reports a device-flow error it will not recover from', async () => {
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', 'Iv1.test');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('/login/device/code')
+          ? json({ device_code: 'dc', user_code: 'ABCD-1234', expires_in: 900, interval: 5 })
+          : json({ error: 'device_flow_disabled', error_description: 'Device flow must be enabled' }),
+      ),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.startDeviceFlow();
+    expect(await auth.pollDeviceFlow(false)).toMatchObject({ status: 'error', message: /device_flow_disabled/ });
+    expect(await auth.pollDeviceFlow(false)).toMatchObject({ status: 'idle' });
+  });
+
+  it('reports slow_down with a longer interval and an expired code as expired', async () => {
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', 'Iv1.test');
+    const answers = [{ error: 'slow_down', interval: 10 }, { error: 'expired_token' }];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('/login/device/code')
+          ? json({ device_code: 'dc', user_code: 'ABCD-1234', expires_in: 900, interval: 5 })
+          : json(answers.shift()),
+      ),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.startDeviceFlow();
+    expect(await auth.pollDeviceFlow(false)).toEqual({ status: 'slow_down', interval: 10 });
+    expect(await auth.pollDeviceFlow(false)).toEqual({ status: 'expired' });
+  });
+
   it('rejects invalid tokens without storing them', async () => {
     vi.stubGlobal(
       'fetch',

@@ -2,8 +2,9 @@ import { GITHUB_CLIENT_ID } from '../shared/config';
 
 /**
  * Credential handling. The token lives only in extension storage restricted to
- * trusted contexts (never content scripts), defaults to the browser session, and is
- * only ever sent to api.github.com.
+ * trusted contexts (never content scripts), and is only ever sent to GitHub.
+ * It is kept in exactly one place: session storage by default (forgotten when the
+ * browser closes), or local storage when the user chooses to stay signed in.
  */
 
 const KEY = 'githubCredential';
@@ -16,10 +17,12 @@ export type Connection = {
   remembered: boolean;
   login?: string;
   method?: Method;
+  /** GitHub rejected the stored credential (expired or revoked). */
+  invalid?: boolean;
   oauthAvailable: boolean;
 };
 
-type Meta = { login?: string; method?: Method };
+type Meta = { login?: string; method?: Method; invalid?: boolean };
 
 let credential: string | undefined;
 let remembered = false;
@@ -34,9 +37,17 @@ export function initializeAuth() {
     type Stored = { [KEY]?: string; [META]?: Meta };
     const session = (await chrome.storage.session.get([KEY, META])) as Stored;
     const local = (await chrome.storage.local.get([KEY, META])) as Stored;
-    credential = session[KEY] || local[KEY] || undefined;
-    remembered = Boolean(local[KEY]);
-    meta = (session[META] || local[META] || {}) as Meta;
+    if (local[KEY]) {
+      credential = local[KEY];
+      remembered = true;
+      meta = local[META] ?? {};
+      // 0.3.0 also kept a session copy of remembered credentials; keep a single copy.
+      if (session[KEY]) await chrome.storage.session.remove([KEY, META]);
+    } else {
+      credential = session[KEY] || undefined;
+      remembered = false;
+      meta = session[META] ?? {};
+    }
   })();
   return initialized;
 }
@@ -53,6 +64,7 @@ export async function connection(): Promise<Connection> {
     remembered,
     login: credential ? meta.login : undefined,
     method: credential ? meta.method : undefined,
+    invalid: credential ? Boolean(meta.invalid) : undefined,
     oauthAvailable: Boolean(GITHUB_CLIENT_ID),
   };
 }
@@ -74,12 +86,13 @@ async function identify(token: string): Promise<string> {
   return user.login ?? '';
 }
 
+const areaFor = (remember: boolean) => (remember ? chrome.storage.local : chrome.storage.session);
+
 async function store(token: string, remember: boolean, method: Method) {
   const login = await identify(token);
   const nextMeta: Meta = { login, method };
-  await chrome.storage.local.remove([KEY, META]);
-  await chrome.storage.session.set({ [KEY]: token, [META]: nextMeta });
-  if (remember) await chrome.storage.local.set({ [KEY]: token, [META]: nextMeta });
+  await areaFor(!remember).remove([KEY, META]);
+  await areaFor(remember).set({ [KEY]: token, [META]: nextMeta });
   credential = token;
   remembered = remember;
   meta = nextMeta;
@@ -92,6 +105,14 @@ export async function connect(token: string, remember: boolean) {
   token = token.trim();
   if (!token || token.length > 512 || /\s/.test(token)) throw new Error('Paste a valid GitHub token.');
   return store(token, remember, 'token');
+}
+
+/** Called when GitHub answers 401 for the stored credential, so Settings can ask the user to reconnect. */
+export async function markInvalid(token: string) {
+  await initializeAuth();
+  if (!credential || credential !== token || meta.invalid) return;
+  meta = { ...meta, invalid: true };
+  await areaFor(remembered).set({ [META]: meta });
 }
 
 export async function disconnect() {
@@ -153,6 +174,7 @@ export async function startDeviceFlow(): Promise<DeviceStart> {
 export type DevicePoll =
   | { status: 'pending' | 'slow_down'; interval: number }
   | { status: 'expired' | 'denied' | 'idle' }
+  | { status: 'error'; message: string }
   | { status: 'connected'; connection: Connection };
 
 /** One poll per call; the Settings page drives the timer so a sleeping worker cannot lose it. */
@@ -164,14 +186,16 @@ export async function pollDeviceFlow(remember: boolean): Promise<DevicePoll> {
     await chrome.storage.session.remove(DEVICE);
     return { status: 'expired' };
   }
-  const result = await postForm<{ access_token?: string; error?: string; interval?: number }>(
-    'https://github.com/login/oauth/access_token',
-    {
-      client_id: GITHUB_CLIENT_ID,
-      device_code: state.deviceCode,
-      grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-    },
-  );
+  const result = await postForm<{
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+    interval?: number;
+  }>('https://github.com/login/oauth/access_token', {
+    client_id: GITHUB_CLIENT_ID,
+    device_code: state.deviceCode,
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+  });
   if (result.access_token) {
     await chrome.storage.session.remove(DEVICE);
     return { status: 'connected', connection: await store(result.access_token, remember, 'oauth') };
@@ -188,7 +212,14 @@ export async function pollDeviceFlow(remember: boolean): Promise<DevicePoll> {
     case 'access_denied':
       await chrome.storage.session.remove(DEVICE);
       return { status: 'denied' };
-    default:
+    case 'authorization_pending':
       return { status: 'pending', interval: state.interval };
+    default:
+      // e.g. device_flow_disabled, incorrect_client_credentials: polling again cannot succeed.
+      await chrome.storage.session.remove(DEVICE);
+      return {
+        status: 'error',
+        message: `GitHub could not complete sign-in${result.error ? ` (${result.error})` : ''}. Use a token instead, or try again later.`,
+      };
   }
 }

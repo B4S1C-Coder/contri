@@ -26,7 +26,13 @@ function DeviceSignIn({ remember, onConnected }: { remember: boolean; onConnecte
         } else if (result.status === 'pending' || result.status === 'slow_down') poll(result.interval);
         else {
           setFlow(null);
-          setStatus(result.status === 'denied' ? 'Sign-in was cancelled on GitHub.' : 'The code expired. Start again.');
+          setStatus(
+            result.status === 'error'
+              ? result.message
+              : result.status === 'denied'
+                ? 'Sign-in was cancelled on GitHub.'
+                : 'The code expired. Start again.',
+          );
         }
       } catch (e) {
         setFlow(null);
@@ -246,6 +252,12 @@ function Settings() {
             </>
           )}
         </section>
+      )}
+
+      {status?.connected && status.invalid && (
+        <p role="alert" className="cc-note cc-note-warn">
+          GitHub rejected this sign-in: it expired or was revoked. Sign out, then connect again.
+        </p>
       )}
 
       {status?.connected && (
