@@ -230,7 +230,7 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
               ? '5,000 requests/hour'
               : '60 requests/hour'}
         </span>
-        <button onClick={onPositionReset} aria-label="Reset CONTRI position">
+        <button onClick={onPositionReset} title="Move CONTRI back to the bottom-right corner">
           Reset position
         </button>
       </footer>

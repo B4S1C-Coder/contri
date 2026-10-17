@@ -10,7 +10,7 @@
 .cc-widget,
 .cc-settings {
   --ink: #f3f6ee;
-  --muted: #d4e2da;
+  --muted: #e2ece5;
   --line: #ffffff25;
   font:
     12px/1.5 'Contri Sans',
@@ -33,7 +33,7 @@
   overflow: hidden;
   border: 1px solid #ffffff75;
   border-radius: 22px;
-  background: linear-gradient(145deg, #476263e8, #304a48ed 58%, #3e5143eb);
+  background: linear-gradient(145deg, #415b5cf2, #2b4442f4 58%, #384b3ef2);
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   box-shadow:
@@ -92,7 +92,8 @@ select {
 .cc-settings a:hover {
   text-decoration: underline;
 }
-.cc-widget button:hover:not(:disabled) {
+/* Zero specificity: a generic hover tint must never override cream buttons or the active tab. */
+.cc-widget :where(button:hover:not(:disabled)) {
   background-color: #ffffff12;
 }
 .cc-widget :focus-visible,
@@ -204,7 +205,7 @@ select {
 .cc-eyebrow {
   font-size: 8px;
   letter-spacing: 1.4px;
-  color: #d7e2d2;
+  color: #e6eee2;
 }
 .cc-title-line {
   display: flex;
@@ -226,7 +227,7 @@ select {
   padding: 2px 6px;
   border: 1px solid #ffffff30;
   border-radius: 5px;
-  color: #e9eedc;
+  color: #f4f7ec;
   background: #ffffff08;
 }
 .cc-facts {
@@ -310,12 +311,12 @@ select {
   display: flex;
   justify-content: space-between;
   font-size: 8px;
-  color: #d1e0d4;
+  color: #e0eae2;
 }
 .cc-caption {
   font-size: 9px !important;
   line-height: 1.6;
-  color: #cedbd1 !important;
+  color: #dfe9e1 !important;
 }
 .cc-widget details {
   border-top: 1px solid var(--line);
@@ -990,7 +991,7 @@ select {
   color: #e8f7ec;
 }
 .cc-tone-warn {
-  background: #d9b46a24;
+  background: #d9b46a1c;
   border-color: #f2dca866;
   color: #fff0cc;
 }
