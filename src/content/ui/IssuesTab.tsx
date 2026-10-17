@@ -17,7 +17,7 @@ function CurrentIssue({ repo, number }: { repo: string; number: number }) {
       <span className="cc-eyebrow">THIS ISSUE · #{number}</span>
       {result.value && <h3>{result.value.issue.title}</h3>}
       {result.loading && !result.value && <Loading>Checking assignees, claims and linked pull requests…</Loading>}
-      {result.error && <Note>{result.error}</Note>}
+      {result.error && <Note onRetry={() => result.reload(true)}>{result.error}</Note>}
       {result.value && (
         <IssueInsight repo={repo} report={result.value} onRefresh={() => result.reload(true)} busy={result.loading} />
       )}
@@ -240,7 +240,8 @@ export function IssuesTab({
         </div>
       )}
       {result.loading && !result.value && <Loading>Finding open issues…</Loading>}
-      {(result.error || error) && <Note>{result.error || error}</Note>}
+      {result.error && <Note onRetry={() => result.reload(true)}>{result.error}</Note>}
+      {!result.error && error && <Note>{error}</Note>}
       {result.value?.incomplete && <Note tone="info">GitHub returned incomplete search results.</Note>}
       {visible.map((item) => (
         <IssueCard

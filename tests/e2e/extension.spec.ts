@@ -142,3 +142,29 @@ test('the widget keeps the CONTRI glass theme and follows GitHub dark mode', asy
   await page.evaluate(() => (document.documentElement.dataset.colorMode = 'dark'));
   await expect(host).toHaveAttribute('data-theme', 'dark');
 });
+
+test('Escape minimizes the panel and returns keyboard focus to the launcher', async ({ context, extensionId }) => {
+  void extensionId;
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets');
+  await page.locator('.cc-launcher').click();
+  await expect(page.locator(widget)).toBeVisible();
+  await page.locator('.cc-nav button', { hasText: 'Team' }).focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator(widget)).toHaveCount(0);
+  await expect(page.locator('.cc-launcher')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator(widget)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'CONTRI' })).toBeVisible();
+});
+
+test('a failed request can be retried in place', async ({ context, extensionId, mock }) => {
+  void extensionId;
+  mock.fail('/repos/acme/widgets', 500);
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets');
+  await page.locator('.cc-launcher').click();
+  await expect(page.locator('.cc-note')).toContainText('GitHub returned 500');
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.locator('.cc-widget h2')).toHaveText('widgets');
+});

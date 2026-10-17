@@ -264,6 +264,8 @@ export function startMockGitHub(port: number) {
     },
   );
   const requests: string[] = [];
+  /** Injected API failures: the next `times` requests whose path equals `path` get `status`. */
+  const failures: Array<{ path: string; status: number; times: number }> = [];
   const server = createServer(
     { key: readFileSync(join(dir, 'key.pem')), cert: readFileSync(join(dir, 'cert.pem')) },
     (req: IncomingMessage, res: ServerResponse) => {
@@ -298,6 +300,11 @@ export function startMockGitHub(port: number) {
           );
           return;
         }
+        const failure = failures.find((f) => f.path === url.pathname && f.times > 0);
+        if (failure) {
+          failure.times--;
+          return send(failure.status, JSON.stringify({ message: 'Injected failure' }), 'application/json', limits);
+        }
         const value = rest(url.pathname, url.searchParams);
         if (value === undefined || value === null)
           return send(404, JSON.stringify({ message: 'Not Found' }), 'application/json', limits);
@@ -311,5 +318,9 @@ export function startMockGitHub(port: number) {
     },
   );
   server.listen(port);
-  return { requests, close: () => new Promise<void>((resolve) => server.close(() => resolve())) };
+  return {
+    requests,
+    fail: (path: string, status: number, times = 1) => failures.push({ path, status, times }),
+    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
 }

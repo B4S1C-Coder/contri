@@ -77,7 +77,7 @@ export function DiscoverTab({
         </div>
       )}
       {result.loading && <Loading>Comparing projects…</Loading>}
-      {result.error && <Note>{result.error}</Note>}
+      {result.error && <Note onRetry={() => result.reload(true)}>{result.error}</Note>}
       {result.value && (
         <>
           <p className="cc-caption">

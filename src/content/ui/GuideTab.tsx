@@ -10,7 +10,7 @@ export function GuideTab({ repo }: { repo: string }) {
       <h2>Read before you start.</h2>
       <p>File presence does not guarantee a welcoming or up-to-date project, but missing guides are worth noticing.</p>
       {result.loading && <Loading>Reading community files…</Loading>}
-      {result.error && <Note>{result.error}</Note>}
+      {result.error && <Note onRetry={() => result.reload(true)}>{result.error}</Note>}
       {result.value?.health != null && (
         <p className="cc-caption">GitHub community profile: {result.value.health}% complete.</p>
       )}

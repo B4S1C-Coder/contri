@@ -135,7 +135,7 @@ export function OverviewTab({
         </span>
       </div>
       {activity.loading && !activity.value && <Loading>Reading 90-day activity…</Loading>}
-      {activity.error && <Note>{activity.error}</Note>}
+      {activity.error && <Note onRetry={() => activity.reload(true)}>{activity.error}</Note>}
       {activity.value && (
         <Activity data={activity.value} onRefresh={() => activity.reload(true)} busy={activity.loading} />
       )}

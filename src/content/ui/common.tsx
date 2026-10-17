@@ -5,11 +5,25 @@ import { ago, time } from '../../shared/format';
 import { safeHref } from '../../shared/repo';
 import { CheckIcon, ExternalIcon, RefreshIcon, WarningIcon } from './icons';
 
-export function Note({ children, tone = 'warn' }: { children: ReactNode; tone?: 'warn' | 'info' }) {
+export function Note({
+  children,
+  tone = 'warn',
+  onRetry,
+}: {
+  children: ReactNode;
+  tone?: 'warn' | 'info';
+  /** Shows a "Try again" button so a failed request can be recovered in place. */
+  onRetry?: () => void;
+}) {
   return (
     <p className={`cc-note cc-note-${tone}`} role="status">
       <WarningIcon size={14} />
       <span>{children}</span>
+      {onRetry && (
+        <button type="button" className="cc-retry" onClick={onRetry}>
+          Try again
+        </button>
+      )}
     </p>
   );
 }

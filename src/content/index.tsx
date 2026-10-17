@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { useCallback, useEffect, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { parsePage, type PageContext } from '../shared/repo';
 import { call, DEFAULT_PREFS, type Prefs } from '../shared/protocol';
 import { App } from './ui/App';
@@ -53,6 +53,8 @@ function boot() {
     const [page, setPage] = useState<PageContext>(() => parsePage(location.href));
     const [mode, setMode] = useState<Mode>('closed');
     const [prefs, setPrefs] = useState<Prefs | null>(null);
+    // Keyboard users who minimize the panel land on the launcher instead of losing focus.
+    const restoreFocus = useRef(false);
 
     useEffect(() => {
       void call('prefs', {})
@@ -147,6 +149,12 @@ function boot() {
     if (mode === 'mini')
       return (
         <button
+          ref={(el) => {
+            if (el && restoreFocus.current) {
+              restoreFocus.current = false;
+              el.focus();
+            }
+          }}
           className="cc-launcher"
           aria-label="Open CONTRI"
           title="CONTRI — open source compass"
@@ -158,7 +166,10 @@ function boot() {
     return (
       <App
         page={{ repo: page.repo, issue: page.issue }}
-        onMinimize={() => setMode('mini')}
+        onMinimize={() => {
+          restoreFocus.current = shadow.activeElement !== null;
+          setMode('mini');
+        }}
         onClose={() => setMode('closed')}
         onPositionReset={reset}
         onDrag={drag}

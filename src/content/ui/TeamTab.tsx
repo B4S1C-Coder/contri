@@ -118,7 +118,7 @@ export function TeamTab({ repo, signedIn }: { repo: string; signedIn: boolean })
       <span className="cc-eyebrow">PEOPLE BEHIND THE PROJECT</span>
       <h2>Team responses</h2>
       {result.loading && !result.value && <Loading>Reading public discussions and reviews…</Loading>}
-      {result.error && <Note>{result.error}</Note>}
+      {result.error && <Note onRetry={() => result.reload(true)}>{result.error}</Note>}
       {result.value && <TeamData data={result.value} onRefresh={() => result.reload(true)} busy={result.loading} />}
     </section>
   );

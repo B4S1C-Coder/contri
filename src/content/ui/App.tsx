@@ -79,7 +79,18 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
   const focusIssue = following && page.repo === repo ? page.issue : null;
 
   return (
-    <div className="cc-widget">
+    <div
+      className="cc-widget"
+      role="region"
+      aria-label="CONTRI"
+      onKeyDown={(e) => {
+        // Escape minimizes the panel back to its launcher, like closing a popover.
+        if (e.key === 'Escape' && !e.defaultPrevented) {
+          e.preventDefault();
+          onMinimize();
+        }
+      }}
+    >
       <GlassEffect />
       <header className="cc-header">
         <button
@@ -182,7 +193,7 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
           </section>
         ) : meta.error ? (
           <section className="cc-section">
-            <Note>{meta.error}</Note>
+            <Note onRetry={() => meta.reload(true)}>{meta.error}</Note>
           </section>
         ) : !meta.value ? (
           <section className="cc-section">
