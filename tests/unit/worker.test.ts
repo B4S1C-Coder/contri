@@ -342,10 +342,38 @@ describe('sign-in resilience', () => {
     const repair = brokenIndexedDB();
     vi.resetModules();
     const restarted = await import('../../src/background/auth');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     expect(await restarted.connection()).toMatchObject({ connected: false });
     expect(chrome.storage.local.dump().githubCredential).toMatchObject({ v: 1 });
+    // Retries are throttled: still signed out right after, back once storage recovers 30 s later.
     repair();
+    expect(await restarted.getToken()).toBeUndefined();
+    vi.advanceTimersByTime(30_000);
+    vi.useRealTimers();
     expect(await restarted.getToken()).toBe('github_pat_keep');
+  });
+
+  it('says plainly when a remembered sign-in cannot be saved', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ login: 'safal' })),
+    );
+    const auth = await import('../../src/background/auth');
+    await auth.getToken();
+    brokenIndexedDB();
+    await expect(auth.connect('github_pat_x', true)).rejects.toThrow(/could not save the sign-in/);
+    expect(await auth.connect('github_pat_x', false)).toMatchObject({ connected: true, remembered: false });
+  });
+
+  it('does not hang when IndexedDB never answers', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.stubGlobal('indexedDB', { open: () => ({}) }); // a request that never fires success or error
+    const vault = await import('../../src/background/vault');
+    const pending = vault.unseal({ v: 1, iv: 'AAAAAAAAAAAAAAAA', data: 'AAAA' });
+    const settled = expect(pending).rejects.toThrow(/did not open in time/);
+    vi.advanceTimersByTime(vault.OPEN_TIMEOUT_MS);
+    await settled;
+    vi.useRealTimers();
   });
 
   it('uses one key when two sign-ins are sealed at the same moment', async () => {

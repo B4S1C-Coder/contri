@@ -93,9 +93,10 @@ async function load() {
   }
 }
 
-/** Lets the next initializeAuth() call run the start-up checks again. */
+const RETRY_AFTER_MS = 30_000;
+/** After a storage failure, run the start-up checks again on the first call 30 seconds later. */
 function retryLater() {
-  queueMicrotask(() => (initialized = undefined));
+  setTimeout(() => (initialized = undefined), RETRY_AFTER_MS);
 }
 
 export async function getToken() {
@@ -137,7 +138,11 @@ const areaFor = (remember: boolean) => (remember ? chrome.storage.local : chrome
 async function store(token: string, remember: boolean, method: Method) {
   const login = await identify(token);
   const nextMeta: Meta = { login, method };
-  const value = remember ? await seal(token) : token;
+  const value = remember
+    ? await seal(token).catch(() => {
+        throw new Error('This browser could not save the sign-in on this device. Try again without “Stay signed in”.');
+      })
+    : token;
   await exclusive(async () => {
     await areaFor(!remember).remove([KEY, META]);
     await areaFor(remember).set({ [KEY]: value, [META]: nextMeta });

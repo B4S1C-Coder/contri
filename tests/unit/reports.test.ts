@@ -432,7 +432,7 @@ describe('issue insight', () => {
     expect(pages).toEqual(['3', '4', '5']);
   });
 
-  const longThread = (total: number, failComments = false) => {
+  const longThread = (total: number, failComments = false, count = total) => {
     const { fetcher, calls } = fakeGitHub([
       repoRoute,
       (u) =>
@@ -447,7 +447,7 @@ describe('issue insight', () => {
               user: { login: 'rep' },
               assignees: [],
               labels: [],
-              comments: total,
+              comments: count,
             })
           : undefined,
       (u) => (u.pathname === `${REPO}/issues/8/timeline` ? json([]) : undefined),
@@ -477,11 +477,17 @@ describe('issue insight', () => {
     expect(pagesOf(calls)).toEqual(['2', '3', '4']);
     expect(report.discussion).toMatchObject({ complete: false, inspected: 300 });
   });
-  it('anonymous: a thread of exactly 300 comments is read completely', async () => {
-    const calls = longThread(300);
+  it('anonymous: short threads are read completely in as few requests as needed', async () => {
+    const calls = longThread(250);
     const report = await insight(createCtx(false), 'acme/widgets', 8);
     expect(pagesOf(calls)).toEqual(['1', '2', '3']);
-    expect(report.discussion).toMatchObject({ complete: true, inspected: 300 });
+    expect(report.discussion).toMatchObject({ complete: true, inspected: 250 });
+  });
+  it('anonymous: a full last page is never called complete, since the count may be stale', async () => {
+    // The (cached) issue says 300 comments, but 305 exist: the newest five are on page 4.
+    longThread(305, false, 300);
+    const report = await insight(createCtx(false), 'acme/widgets', 8);
+    expect(report.discussion).toMatchObject({ complete: false, inspected: 300 });
   });
   it('anonymous: when comments fail to load, the report says nothing was inspected', async () => {
     longThread(12, true);

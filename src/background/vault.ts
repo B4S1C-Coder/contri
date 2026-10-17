@@ -31,10 +31,24 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
   });
 }
 
+/** An IndexedDB open that never settles must not freeze sign-in: give up after a few seconds. */
+export const OPEN_TIMEOUT_MS = 5_000;
+
 async function database(): Promise<IDBDatabase> {
   const open = indexedDB.open(DB, 1);
   open.onupgradeneeded = () => open.result.createObjectStore(STORE);
-  return request(open);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new DOMException('IndexedDB did not open in time', 'TimeoutError')),
+      OPEN_TIMEOUT_MS,
+    );
+  });
+  try {
+    return await Promise.race([request(open), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function readKey(db: IDBDatabase) {

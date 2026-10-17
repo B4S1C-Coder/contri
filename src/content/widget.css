@@ -784,7 +784,6 @@ select {
   flex: none;
 }
 .cc-tools-row button {
-  background: none;
   border: 0;
   color: inherit;
   font: inherit;

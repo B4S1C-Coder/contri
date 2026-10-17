@@ -145,8 +145,9 @@ async function newestComments(
   const pages = Math.ceil(total / 100);
   if (pages <= COMMENT_PAGES) {
     const all = await ctx.client.restAll<RestComment>(path, COMMENT_PAGES);
-    // A full last page looks "maybe more" to restAll, but the issue says how many comments exist.
-    return { values: all.values, complete: all.complete || all.values.length >= total };
+    // A short page proves the end. Otherwise trust the issue's count only when it is not a
+    // multiple of 100: a cached count can lag behind, and then a full last page hides newer ones.
+    return { values: all.values, complete: all.complete || (all.values.length >= total && total % 100 !== 0) };
   }
   const values: RestComment[] = [];
   for (let page = pages - COMMENT_PAGES + 1; page <= pages; page++)

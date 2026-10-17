@@ -57,9 +57,11 @@ test('hovering a cream button or the active tab keeps its cream fill', async ({ 
   const primary = page.locator('.cc-primary', { hasText: 'Find an issue' });
   await primary.hover();
   expect(await background('.cc-primary')).toBe('rgb(255, 252, 239)');
-  // Ordinary buttons still show hover feedback.
+  // Ordinary buttons still show hover feedback, including the tools row.
   await page.locator('.cc-nav button', { hasText: 'Team' }).hover();
   expect(await background('.cc-nav button:nth-child(2)')).toBe('rgba(255, 255, 255, 0.07)');
+  await page.locator('.cc-tools-row button', { hasText: 'Saved' }).hover();
+  expect(await background('.cc-tools-row button')).toBe('rgba(255, 255, 255, 0.07)');
 });
 
 test('the panel stays on screen at small viewports and 200% zoom', async ({ context, extensionId }) => {

@@ -129,6 +129,12 @@ test('Escape in a text field keeps the panel and what was typed', async ({ conte
   await expect(keyword).not.toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator(widget)).toHaveCount(0);
+  // On a checkbox (nothing to type), one Escape minimizes.
+  await page.locator('.cc-launcher').click();
+  await page.locator('.cc-nav button', { hasText: 'Issues' }).click();
+  await page.locator('.cc-widget input[type=checkbox]').first().focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator(widget)).toHaveCount(0);
 });
 
 test('a failed request can be retried in place', async ({ context, extensionId, mock }) => {

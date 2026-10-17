@@ -90,7 +90,11 @@ export function App({ page, onMinimize, onClose, onPositionReset, onDrag, onMove
         // In a text field, Escape only leaves the field (nothing typed is lost); otherwise it
         // minimizes the panel back to its launcher, like closing a popover.
         const target = e.target as HTMLElement;
-        if (target.closest('input, textarea, select, [contenteditable="true"]'))
+        if (
+          target.closest(
+            'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, select, [contenteditable="true"]',
+          )
+        )
           (e.currentTarget as HTMLElement).focus();
         else onMinimize();
       }}
