@@ -2,8 +2,8 @@
 
 <a href="https://contri-two.vercel.app">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/contri-logo-white.png" />
-    <img src="docs/assets/contri-logo-dark.png" width="360" alt="contri." />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/alphasafal/contri/main/docs/assets/contri-logo-white.png" />
+    <img src="https://raw.githubusercontent.com/alphasafal/contri/main/docs/assets/contri-logo-dark.png" width="360" alt="contri." />
   </picture>
 </a>
 

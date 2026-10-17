@@ -2,9 +2,10 @@ import { readdir, unlink } from 'node:fs/promises';
 import sharp from 'sharp';
 
 /** Converts freshly captured README screenshots in docs/assets to compact WebP. */
-// The logo and the social card stay PNG (GitHub's social preview needs PNG/JPG).
-const KEEP = new Set(['contri-logo.png', 'social-preview.png']);
-for (const file of (await readdir('docs/assets')).filter((f) => f.endsWith('.png') && !KEEP.has(f))) {
+// Only screenshots become WebP. Logos and the social card stay PNG (GitHub's social preview needs PNG/JPG).
+for (const file of (await readdir('docs/assets')).filter(
+  (f) => /^(screenshot-|issue-badge)/.test(f) && f.endsWith('.png'),
+)) {
   const path = `docs/assets/${file}`;
   await sharp(path)
     .webp({ quality: 86 })
