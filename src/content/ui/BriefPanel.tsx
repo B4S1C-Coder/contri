@@ -1,3 +1,4 @@
+import { ExternalIcon } from './icons';
 import { useState } from 'react';
 import { buildBrief, type BriefEvidence, type BriefTask } from '../../core/brief';
 
@@ -52,7 +53,7 @@ export function BriefPanel({
       <div className="cc-presets">
         {CHATS.map(([name, url]) => (
           <a key={name} href={url} target="_blank" rel="noreferrer">
-            Open {name} ↗
+            Open {name} <ExternalIcon size={11} />
           </a>
         ))}
       </div>

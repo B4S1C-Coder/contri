@@ -96,7 +96,7 @@ export function DiscoverTab({
                   r.merges90 === null ? null : `${r.merges90} human merges (of latest 50)`,
                   r.goodFirstIssues === null ? null : `${r.goodFirstIssues} good first issues`,
                   r.language,
-                  `★ ${count(r.stars)}`,
+                  `${count(r.stars)} stars`,
                 ]
                   .filter(Boolean)
                   .join(' · ')}

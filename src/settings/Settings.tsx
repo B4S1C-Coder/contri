@@ -4,7 +4,7 @@ import type { DeviceStart } from '../background/auth';
 import { call, type ConnectionInfo, type Prefs } from '../shared/protocol';
 import { REPO_URL, WEBSITE_URL } from '../shared/config';
 import { safeHref } from '../shared/repo';
-import { Wordmark } from '../content/ui/icons';
+import { ExternalIcon, Wordmark } from '../content/ui/icons';
 import '../content/widget.css';
 import './settings.css';
 
@@ -80,7 +80,7 @@ function DeviceSignIn({ remember, onConnected }: { remember: boolean; onConnecte
               {copied ? 'Copied' : 'Copy code'}
             </button>
             <a className="cc-secondary" href={flow.verificationUri} target="_blank" rel="noreferrer">
-              Open github.com/login/device ↗
+              Open github.com/login/device <ExternalIcon size={11} />
             </a>
           </div>
           <p className="cc-small">Waiting for you to approve… CONTRI only asks for public, read-only access.</p>
@@ -122,7 +122,7 @@ function TokenForm({ remember, onConnected }: { remember: boolean; onConnected: 
             target="_blank"
             rel="noreferrer"
           >
-            Create a fine-grained token on GitHub ↗
+            Create a fine-grained token on GitHub <ExternalIcon size={11} />
           </a>{' '}
           with your account as owner and a 30-day expiry.
         </li>
@@ -211,7 +211,7 @@ function Settings() {
       <header>
         <Wordmark size={26} />
         <a className="cc-site" href={WEBSITE_URL} target="_blank" rel="noreferrer">
-          contri-two.vercel.app ↗
+          contri-two.vercel.app <ExternalIcon size={11} />
         </a>
       </header>
       <h1>{status?.connected ? 'You’re connected.' : WELCOME ? 'Welcome to CONTRI.' : 'A clearer connection.'}</h1>
@@ -300,15 +300,15 @@ function Settings() {
         <p className="cc-small">
           Public repositories only · no analytics · no backend · AI summaries run on your device.{' '}
           <a href={WEBSITE_URL} target="_blank" rel="noreferrer">
-            Website ↗
+            Website <ExternalIcon size={11} />
           </a>{' '}
           ·{' '}
           <a href={`${REPO_URL}/blob/main/PRIVACY.md`} target="_blank" rel="noreferrer">
-            Privacy details ↗
+            Privacy details <ExternalIcon size={11} />
           </a>{' '}
           ·{' '}
           <a href="https://github.com/settings/applications" target="_blank" rel="noreferrer">
-            Review or revoke access on GitHub ↗
+            Review or revoke access on GitHub <ExternalIcon size={11} />
           </a>
         </p>
       </section>
