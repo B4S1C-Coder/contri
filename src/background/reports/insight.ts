@@ -131,6 +131,28 @@ type RestTimeline = {
   };
 };
 
+const COMMENT_PAGES = 3;
+
+/**
+ * REST lists comments oldest first. For long threads, read the newest pages: recent
+ * claims and replies matter more than the opening discussion.
+ */
+async function newestComments(
+  ctx: Ctx,
+  path: string,
+  total: number,
+): Promise<{ values: RestComment[]; complete: boolean }> {
+  const pages = Math.ceil(total / 100);
+  if (pages <= COMMENT_PAGES) return ctx.client.restAll<RestComment>(path, COMMENT_PAGES);
+  const values: RestComment[] = [];
+  for (let page = pages - COMMENT_PAGES + 1; page <= pages + 1; page++) {
+    const rows = await ctx.client.rest<RestComment[]>(`${path}?per_page=100&page=${page}`);
+    values.push(...rows);
+    if (rows.length < 100) break;
+  }
+  return { values, complete: false };
+}
+
 async function viaRest(ctx: Ctx, repo: string, number: number, roster?: Roster): Promise<InsightReport> {
   await publicRepo(ctx, repo);
   const base = repoPath(repo);
@@ -166,7 +188,7 @@ async function viaRest(ctx: Ctx, repo: string, number: number, roster?: Roster):
   let replies: Reply[] = [];
   let repliesComplete = false;
   try {
-    const comments = await ctx.client.restAll<RestComment>(`${base}/issues/${number}/comments`);
+    const comments = await newestComments(ctx, `${base}/issues/${number}/comments`, issue.comments);
     replies = comments.values.map(restComment);
     repliesComplete = comments.complete;
   } catch (error) {
@@ -210,7 +232,7 @@ query Insight($owner: String!, $name: String!, $number: Int!) {
       assignees(first: 10) { nodes { login } }
       labels(first: 10) { nodes { name } }
       closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { ${PR_FIELDS} } }
-      timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 50) {
+      timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], last: 50) {
         totalCount
         nodes { ... on CrossReferencedEvent { source { ... on PullRequest { ${PR_FIELDS} } } } }
       }
@@ -297,7 +319,7 @@ async function viaGraphql(ctx: Ctx, repo: string, number: number, roster?: Roste
     errors.map((e) => `Partial data from GitHub: ${e}`),
     complete
       ? 'Development links, closing keywords and timeline references checked. Unlinked work can still exist.'
-      : 'Over 50 timeline references; some may be missing.',
+      : 'Over 50 timeline references; only the latest 50 were checked.',
   );
 }
 

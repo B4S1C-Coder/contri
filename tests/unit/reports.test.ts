@@ -258,6 +258,49 @@ describe('team', () => {
 });
 
 describe('issue insight', () => {
+  it('anonymous: reads the newest comments of a long thread so a recent claim is not missed', async () => {
+    const total = 450;
+    const comment = (i: number) => ({
+      user: { login: i === total - 1 ? 'newbie' : `user${i % 7}` },
+      author_association: 'NONE',
+      created_at: isoAgo((total - i) / 100),
+      html_url: `c${i}`,
+      body: i === total - 1 ? "I'd like to work on this, can you assign it to me?" : 'Same problem here.',
+    });
+    const { fetcher, calls } = fakeGitHub([
+      repoRoute,
+      (u) =>
+        u.pathname === `${REPO}/issues/7`
+          ? json({
+              number: 7,
+              title: 'Popular bug',
+              html_url: 'https://github.com/acme/widgets/issues/7',
+              state: 'open',
+              created_at: isoAgo(30),
+              body: 'Broken.',
+              user: { login: 'rep' },
+              assignees: [],
+              labels: [],
+              comments: total,
+            })
+          : undefined,
+      (u) => (u.pathname === `${REPO}/issues/7/timeline` ? json([]) : undefined),
+      (u) => {
+        if (u.pathname !== `${REPO}/issues/7/comments`) return undefined;
+        const page = Number(u.searchParams.get('page'));
+        return json(Array.from({ length: total }, (_, i) => comment(i)).slice((page - 1) * 100, page * 100));
+      },
+    ]);
+    setTransport(fetcher);
+    const report = await insight(createCtx(false), 'acme/widgets', 7);
+    expect(report.claim).toMatchObject({ state: 'claimed', claim: { login: 'newbie' } });
+    expect(report.discussion).toMatchObject({ complete: false, inspected: 250 });
+    const pages = calls
+      .filter((c) => c.includes('/comments'))
+      .map((c) => new URL(`https://x${c.slice(4)}`).searchParams.get('page'));
+    expect(pages).toEqual(['3', '4', '5']);
+  });
+
   it('anonymous: reads linked PRs from the timeline and detects a stale claim', async () => {
     const { fetcher } = fakeGitHub([
       repoRoute,
