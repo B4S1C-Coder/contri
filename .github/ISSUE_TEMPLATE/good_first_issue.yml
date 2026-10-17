@@ -1,0 +1,39 @@
+name: Good first issue (maintainers)
+description: A small, well-scoped task for a first-time contributor.
+labels: [good first issue]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For maintainers: describe a task someone new to the codebase can finish in an evening. Link the exact files.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What should change, and why?
+      description: The user-visible result in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to start
+      description: Files, functions and existing tests to look at.
+      placeholder: |
+        - src/core/claims.ts → CLAIM_PATTERNS
+        - tests/unit/claims.test.ts
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: A short checklist a reviewer can verify.
+      placeholder: |
+        - [ ] New unit tests cover the change
+        - [ ] npm run check passes
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Contributors: comment “I'd like to work on this” before starting, so others can see it is taken (CONTRI will show it as claimed).
