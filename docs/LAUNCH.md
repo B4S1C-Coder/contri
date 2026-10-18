@@ -34,7 +34,7 @@ GitHub release notes come from the top entry of [CHANGELOG.md](../CHANGELOG.md);
 
 ## Posts
 
-Replace `<store link>` once the Chrome Web Store listing is live; until then link the GitHub release.
+Chrome Web Store listing: https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid
 
 ### X / Threads / Bluesky
 
@@ -44,7 +44,7 @@ Replace `<store link>` once the Chrome Web Store listing is live; until then lin
 >
 > Also: how fast maintainers reply, and who they are. No backend, no tracking.
 >
-> <store link>
+> https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid
 
 ### LinkedIn
 
@@ -54,7 +54,7 @@ Replace `<store link>` once the Chrome Web Store listing is live; until then lin
 >
 > It is free and MIT licensed. There is no backend and no tracking, it only reads public repositories, and every number says what it covers. When data is missing it says “unknown”, not zero.
 >
-> I'd love feedback from contributors and maintainers: <store link>
+> I'd love feedback from contributors and maintainers: https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid
 >
 > #opensource #github #developers #hacktoberfest
 

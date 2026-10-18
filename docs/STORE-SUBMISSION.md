@@ -2,6 +2,8 @@
 
 ## Status
 
+**Published:** https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid (first approved version 0.3.2). Future versions: upload the new release ZIP in the same item (Package → Upload new package).
+
 The code-side checks pass on the release build (see [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md)). The remaining steps happen in the Chrome Web Store Developer Dashboard and can only be done by the publisher. Google reviews every submission; nothing in this file is an approval or a compliance certification.
 
 **Upload this file:** `contri-v<version>.zip` from the GitHub release (not the `-firefox` zip, not "Source code"). `manifest.json` is at its root and `npm run verify:package` checks it.

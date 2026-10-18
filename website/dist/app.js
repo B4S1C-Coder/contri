@@ -50,7 +50,7 @@ document.addEventListener('visibilitychange',()=>hero.classList.toggle('ambient-
   const stars=document.querySelectorAll('[data-stat="stars"]');
   stars.forEach(el=>{el.textContent=fmt(d.stars);el.hidden=false;});
   const parts=[];
-  if(d.downloads)parts.push(`${fmt(d.downloads)} ${d.downloads===1?'download':'downloads'}`);
+  if(d.downloads)parts.push(`${fmt(d.downloads)} GitHub ${d.downloads===1?'download':'downloads'}`);
   if(d.watchers)parts.push(`${fmt(d.watchers)} watching`);
   const box=document.getElementById('repo-stats');box.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');box.hidden=!parts.length;
  };

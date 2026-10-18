@@ -41,3 +41,6 @@
 .star-nudge .star-pill{padding:9px 16px;font-size:12px}
 @media(max-width:600px){.star-pill{font-size:11px;padding:11px 16px}.repo-stats{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.star-pill{transition:none}.star-pill:hover{transform:none}}
+
+.alt-install{margin:18px 0 0;font-size:12px;color:#fbf9ec}
+.alt-install a,#install-steps a,.faq-list p a{text-decoration:underline;text-underline-offset:3px}

@@ -13,6 +13,7 @@
 
 Project activity, maintainer reply times, claims and linked pull requests — right on GitHub.
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Add%20to%20Chrome-476263?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid)
 [![CI](https://github.com/alphasafal/contri/actions/workflows/ci.yml/badge.svg)](https://github.com/alphasafal/contri/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/alphasafal/contri/actions/workflows/codeql.yml/badge.svg)](https://github.com/alphasafal/contri/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/alphasafal/contri?include_prereleases&sort=semver&color=476263)](https://github.com/alphasafal/contri/releases)
@@ -61,14 +62,18 @@ CONTRI follows GitHub's light or dark appearance with the same teal glass look.
 
 ## Install
 
-### From a release (recommended)
+### From the Chrome Web Store (recommended)
+
+**[Add CONTRI to Chrome](https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid)** — one click, updates automatically. The same listing works in Edge (allow extensions from other stores when asked) and Brave.
+
+### From a release
+
+For Firefox (experimental) or a manual install:
 
 1. Download `contri-v<version>.zip` (not “Source code”) from the [latest release](https://github.com/alphasafal/contri/releases) and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and choose the unzipped folder.
 4. A welcome page opens. Sign in with GitHub (or skip and use anonymous mode).
-
-CONTRI has been submitted to the Chrome Web Store and is in review — see [docs/STORE-SUBMISSION.md](docs/STORE-SUBMISSION.md). Until it is approved, install the release ZIP as above.
 
 ### From source
 
@@ -212,7 +217,7 @@ Chrome, Edge, Brave and other Chromium browsers (version 124+). Firefox 128+ is 
 - [x] Sign in with GitHub (device flow) and GraphQL reports
 - [x] On-device AI summaries
 - [x] Watched issues with notifications
-- [ ] Chrome Web Store listing (submitted, in review)
+- [x] [Chrome Web Store listing](https://chromewebstore.google.com/detail/njglkdpnkbieohopledjohcpkafogbid)
 - [ ] Badges on GitHub's issue list and search results
 - [ ] Translations
 - [ ] Maintainer view: who is waiting longest for a reply
