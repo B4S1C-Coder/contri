@@ -21,7 +21,7 @@ Project activity, maintainer reply times, claims and linked pull requests — ri
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-476263?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-3e5143.svg)](CONTRIBUTING.md)
 [![Good first issues](https://img.shields.io/github/issues/alphasafal/contri/good%20first%20issue?label=good%20first%20issues&color=3e5143)](https://github.com/alphasafal/contri/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alphasafal/contri)
+[![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask%20about%20the%20code-476263)](https://deepwiki.com/alphasafal/contri)
 [![Stars](https://img.shields.io/github/stars/alphasafal/contri?style=social)](https://github.com/alphasafal/contri/stargazers)
 
 **🌐 [contri-two.vercel.app](https://contri-two.vercel.app)** · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Code walkthrough](https://deepwiki.com/alphasafal/contri) · [Contributing](CONTRIBUTING.md) · [Launch kit](docs/LAUNCH.md)
