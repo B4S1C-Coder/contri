@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.3 — more accurate claims and times
+
+**Fixed**
+
+- Refusals are no longer read as claims: “I can't take this one, sorry”, “I will not take this” or “I'm unable to work on this” no longer show the issue as claimed, and “I won't be able to fix this” counts as giving it back. Claims typed with curly apostrophes (phones, macOS) are now recognized. (#11, #14)
+- GitHub pages such as Copilot, advisories, stars lists and sessions are no longer mistaken for repositories, which saves requests that could never succeed. (#12, #15)
+- Durations round before choosing the unit, so reply and merge times show “1h” instead of “60m” and “2d” instead of “48h”. (#13, #16)
+
+Thanks to @faizulr for reporting and fixing all three.
+
 ## 0.3.2 — Sign in with GitHub
 
 **New**
