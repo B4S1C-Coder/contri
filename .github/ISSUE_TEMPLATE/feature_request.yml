@@ -2,11 +2,18 @@ name: Feature request
 description: Suggest an idea that would help contributors or maintainers.
 labels: [enhancement]
 body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched the existing issues and discussions and this has not been suggested yet.
+          required: true
   - type: textarea
     id: problem
     attributes:
       label: What problem does this solve?
-      description: Who is it for (first-time contributor, maintainer, …) and what is hard today?
+      description: Who is it for (first-time contributor, maintainer, …) and what is hard today? A real example helps most.
     validations:
       required: true
   - type: textarea
@@ -19,7 +26,16 @@ body:
     id: evidence
     attributes:
       label: What GitHub data would it use?
-      description: CONTRI only shows public evidence it can link to. Rough request cost helps too.
+      description: CONTRI only shows public evidence it can link to. Rough request cost for anonymous users (60 requests an hour) helps too.
+  - type: dropdown
+    id: ai
+    attributes:
+      label: Did you use an AI tool to write this request?
+      options:
+        - 'No'
+        - 'Yes'
+    validations:
+      required: true
   - type: checkboxes
     id: help
     attributes:

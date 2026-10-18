@@ -1,27 +1,52 @@
 name: Bug report
-description: Something in CONTRI is wrong or broken.
+description: Something in CONTRI is wrong or broken. Evidence required.
 labels: [bug, triage]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! Please **never paste a GitHub token** or personal data in an issue or screenshot.
+        Thanks for reporting! A maintainer must be able to see the bug for themselves, so every report needs **steps that reproduce it** and **evidence** (a screenshot, console output, a failing test, or the exact input and output).
+
+        Please **never paste a GitHub token** or personal data in an issue or screenshot. Security problems go to a [private advisory](https://github.com/alphasafal/contri/security/advisories/new), not here.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched the existing issues (open and closed) and this is not a duplicate.
+          required: true
+        - label: I reproduced this myself on the latest CONTRI version.
+          required: true
   - type: textarea
     id: what
     attributes:
       label: What happened?
-      description: What did you see, and what did you expect instead?
+      description: What you saw, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Include the repository or issue URL you were on, if public.
+      description: Exact steps someone else can follow. Include the public repository or issue URL you were on, or the function and input if you found it in the code.
       placeholder: |
         1. Open https://github.com/owner/repo/issues/123
         2. Click the CONTRI badge
-        3. …
+        3. The badge says “Claimed by @someone”, but their comment says “I can't take this”
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: |
+        At least one of: a screenshot or recording, console errors (GitHub tab, or chrome://extensions → CONTRI → service worker), a failing unit test, or the exact input and wrong output (for example `hours(0.999)` returns `"60m"`). Remove anything personal.
     validations:
       required: true
   - type: dropdown
@@ -38,6 +63,7 @@ body:
         - Saved & watched / notifications
         - On-device AI
         - Sign-in / settings
+        - Website
         - Other
     validations:
       required: true
@@ -45,16 +71,29 @@ body:
     id: mode
     attributes:
       label: Signed in?
-      options: [Anonymous, Signed in with GitHub, Personal access token]
+      options: [Anonymous, Signed in with GitHub, Personal access token, Not applicable (found in the code)]
+    validations:
+      required: true
   - type: input
     id: versions
     attributes:
       label: Browser and CONTRI version
-      placeholder: Chrome 141, CONTRI 0.3.1
+      description: CONTRI's version is on chrome://extensions. If you found it in the code, give the commit or "main".
+      placeholder: Chrome 141, CONTRI 0.3.3
     validations:
       required: true
-  - type: textarea
-    id: extra
+  - type: dropdown
+    id: ai
     attributes:
-      label: Screenshots or console errors
-      description: From the GitHub tab or chrome://extensions → CONTRI → service worker. Remove anything personal.
+      label: Did you use an AI tool to find or write this report?
+      description: AI help is welcome. We ask so reviewers know how the bug was found, and we expect you to have confirmed it yourself (see AGENTS.md).
+      options:
+        - 'No'
+        - Yes, and I reproduced the bug myself
+    validations:
+      required: true
+  - type: input
+    id: ai-tool
+    attributes:
+      label: If yes, which tool and what did it do?
+      placeholder: e.g. Copilot found the regex while I was reading claims.ts; I wrote the steps and checked them
