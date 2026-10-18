@@ -8,6 +8,11 @@ Thanks for helping make open source easier to join. Small, focused pull requests
 - Bug reports need **exact steps and evidence**: a screenshot, console output, a failing test, or the exact input and wrong output. A maintainer has to be able to see the bug for themselves.
 - Comment that you'd like to work on it. (CONTRI itself will show maintainers and other contributors that you claimed it.)
 
+## Understand the code
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/METRICS.md](docs/METRICS.md) explain how CONTRI is built and how every number is calculated.
+- [DeepWiki](https://deepwiki.com/alphasafal/contri) is a browsable, searchable walkthrough of the whole codebase where you can ask questions, for example [how metrics and the maintainer roster work](https://deepwiki.com/alphasafal/contri/3.2-metrics-and-maintainer-roster). It is generated from the repository and can lag behind recent changes; the code and `docs/` are the source of truth.
+
 ## Set up
 
 1. Fork and clone the repository. Use Node.js 24 (`.nvmrc`).

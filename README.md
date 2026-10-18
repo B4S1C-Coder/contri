@@ -21,9 +21,10 @@ Project activity, maintainer reply times, claims and linked pull requests — ri
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-476263?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-3e5143.svg)](CONTRIBUTING.md)
 [![Good first issues](https://img.shields.io/github/issues/alphasafal/contri/good%20first%20issue?label=good%20first%20issues&color=3e5143)](https://github.com/alphasafal/contri/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alphasafal/contri)
 [![Stars](https://img.shields.io/github/stars/alphasafal/contri?style=social)](https://github.com/alphasafal/contri/stargazers)
 
-**🌐 [contri-two.vercel.app](https://contri-two.vercel.app)** · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Contributing](CONTRIBUTING.md) · [Launch kit](docs/LAUNCH.md)
+**🌐 [contri-two.vercel.app](https://contri-two.vercel.app)** · [Install](#install) · [Features](#what-it-does) · [How the numbers work](docs/METRICS.md) · [Code walkthrough](https://deepwiki.com/alphasafal/contri) · [Contributing](CONTRIBUTING.md) · [Launch kit](docs/LAUNCH.md)
 
 <img src="docs/assets/screenshot-issue.webp" width="880" alt="contri. on a GitHub issue: a “Claim went quiet” badge under the title and the details panel" />
 
@@ -147,6 +148,8 @@ tests/e2e/       Playwright + mock GitHub
 ```
 
 More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+**New to the codebase?** [DeepWiki](https://deepwiki.com/alphasafal/contri) has a browsable walkthrough of every part of CONTRI — the service worker, claim detection and verdicts, [metrics and the maintainer roster](https://deepwiki.com/alphasafal/contri/3.2-metrics-and-maintainer-roster), the widget, tests and release pipeline — and you can ask it questions about the code. It is generated automatically from this repository, so if it disagrees with the code or `docs/`, the code and `docs/` win.
 
 ## Honest numbers
 

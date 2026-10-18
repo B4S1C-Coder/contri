@@ -6,7 +6,7 @@ AI-assisted contributions are welcome. The person who opens the issue or pull re
 
 ## Project in one paragraph
 
-CONTRI is a Manifest V3 Chrome extension (Preact + TypeScript + Vite) that shows, on GitHub pages, whether an issue is free to take, how quickly maintainers reply and whether a project is active. It has no backend and no analytics: the service worker calls the public GitHub API directly, anonymously (60 requests an hour) or with an optional read-only sign-in. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/METRICS.md](docs/METRICS.md).
+CONTRI is a Manifest V3 Chrome extension (Preact + TypeScript + Vite) that shows, on GitHub pages, whether an issue is free to take, how quickly maintainers reply and whether a project is active. It has no backend and no analytics: the service worker calls the public GitHub API directly, anonymously (60 requests an hour) or with an optional read-only sign-in. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/METRICS.md](docs/METRICS.md). A generated walkthrough is at [DeepWiki](https://deepwiki.com/alphasafal/contri); it can lag behind the code, so always confirm against the source.
 
 ## Setup and commands
 
