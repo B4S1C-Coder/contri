@@ -222,3 +222,20 @@ test('clicking the minimized launcher without dragging still opens it', async ({
   await launcher.click();
   await expect(page.locator(widget)).toBeVisible();
 });
+
+test('pressing Enter on the launcher opens it after dragging', async ({ context, extensionId }) => {
+  void extensionId;
+  const page = await context.newPage();
+  await page.goto('https://github.com/acme/widgets');
+  const launcher = page.locator('.cc-launcher');
+  await expect(launcher).toBeVisible();
+  const host = page.locator('#contri-widget-root');
+  const before = (await host.boundingBox())!;
+  await launcher.hover();
+  await page.mouse.down();
+  await page.mouse.move(before.x + before.width / 2 - 80, before.y + before.height / 2 - 60, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator(widget)).toHaveCount(0);
+  await launcher.press('Enter');
+  await expect(page.locator(widget)).toBeVisible();
+});

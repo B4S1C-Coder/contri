@@ -171,7 +171,9 @@ function boot() {
           title="CONTRI — open source compass. Drag to move."
           onPointerDown={drag}
           onClick={() => {
-            if (!didDrag.current) setMode('open');
+            const dragged = didDrag.current;
+            didDrag.current = false;
+            if (!dragged) setMode('open');
           }}
         >
           <LogoMark size={26} />
